@@ -1,4 +1,4 @@
-package com.admincontest.student.domain;
+package com.admincontest.user.domain;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Getter
 @Table(name = "users")
-public class Student {
+public class User {
 	@Id
 	@Column(name = "user_id")
 	private Long id;
@@ -31,7 +31,7 @@ public class Student {
 	private LocalDateTime created_at;
 
 	@Column(name = "role")
-	private User_Status status;
+	private UserStatus status;
 
 	@Column(name = "reservation_count")
 	private int reservation_count;

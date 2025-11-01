@@ -1,4 +1,4 @@
-package com.admincontest.user.domain;
+package com.admincontest.domain.user.domain;
 
 import java.time.LocalDateTime;
 

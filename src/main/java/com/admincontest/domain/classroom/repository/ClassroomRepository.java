@@ -1,6 +1,6 @@
-package com.admincontest.classroom.repository;
+package com.admincontest.domain.classroom.repository;
 
-import com.admincontest.classroom.domain.Classroom;
+import com.admincontest.domain.classroom.domain.Classroom;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClassroomRepository extends JpaRepository<Classroom, Long> {

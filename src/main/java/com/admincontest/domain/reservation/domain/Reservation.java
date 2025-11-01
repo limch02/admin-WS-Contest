@@ -1,4 +1,4 @@
-package com.admincontest.reservation.domain;
+package com.admincontest.domain.reservation.domain;
 
 import java.time.LocalDateTime;
 

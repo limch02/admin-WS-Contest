@@ -1,4 +1,4 @@
-package com.admincontest.classroom.domain;
+package com.admincontest.domain.classroom.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -3,7 +3,9 @@ package com.admincontest.reservation.service;
 import com.admincontest.classroom.domain.Classroom;
 import com.admincontest.classroom.service.ClassroomService;
 import com.admincontest.reservation.domain.Reservation;
+import com.admincontest.reservation.domain.ReservationParticipant;
 import com.admincontest.reservation.dto.ReservationRequest;
+import com.admincontest.reservation.repository.ReservationParticipantRepository;
 import com.admincontest.reservation.repository.ReservationRepository;
 import com.admincontest.user.domain.User;
 import com.admincontest.user.repository.UserRepository;
@@ -14,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -24,6 +28,7 @@ import java.util.stream.IntStream;
 public class ReservationService {
 
     private final ReservationRepository reservationRepository;
+    private final ReservationParticipantRepository reservationParticipantRepository;
     private final ClassroomService classroomService;
     private final UserRepository userRepository;
     private final WaitlistService waitlistService;
@@ -94,7 +99,21 @@ public class ReservationService {
                 classroom,
                 user
         );
-        return reservationRepository.save(reservation).getId();
+        Reservation savedReservation = reservationRepository.save(reservation);
+        
+        // 참여자들을 Reserve_User 테이블에 저장
+        if (request.getMembers() != null && !request.getMembers().isEmpty()) {
+            for (ReservationRequest.Member member : request.getMembers()) {
+                User memberUser = userRepository.findByLoginId(member.getStudentId())
+                        .orElseThrow(() -> new IllegalArgumentException("참여자 '" + member.getStudentName() + "(" + member.getStudentId() + ")'를 찾을 수 없습니다."));
+                
+                // Reserve_User 테이블에 참여자 저장
+                ReservationParticipant participant = ReservationParticipant.of(memberUser, savedReservation);
+                reservationParticipantRepository.save(participant);
+            }
+        }
+        
+        return savedReservation.getId();
     }
 
     public List<Integer> getAvailableTimes(Long roomId, LocalDate date) {
@@ -143,13 +162,28 @@ public class ReservationService {
     }
     
     /**
-     * 특정 사용자의 예약 내역 조회
+     * 특정 사용자의 예약 내역 조회 (본인이 예약한 것 + 참여한 것 모두 포함)
      */
     public List<java.util.Map<String, Object>> getUserReservations(Long userId) {
-        List<Reservation> reservations = reservationRepository.findAllByUserId(userId);
+        // 본인이 예약한 예약 목록
+        List<Reservation> ownReservations = reservationRepository.findAllByUserId(userId);
         
-        return reservations.stream()
+        // 본인이 참여한 예약 목록 (Reserve_User 테이블에서 조회)
+        List<ReservationParticipant> participants = reservationParticipantRepository.findByUserId(userId);
+        
+        // 예약 ID를 Set으로 만들어 중복 제거 (본인이 예약한 것과 참여한 것이 같은 예약일 수 있음)
+        Set<Long> reservationIds = new HashSet<>();
+        ownReservations.forEach(r -> reservationIds.add(r.getId()));
+        participants.forEach(p -> reservationIds.add(p.getReservation().getId()));
+        
+        // 모든 예약 조회
+        List<Reservation> allReservations = reservationRepository.findAllById(reservationIds);
+        
+        return allReservations.stream()
                 .map(r -> {
+                    // 본인이 예약한 것인지 참여한 것인지 확인
+                    boolean isOwner = r.getUser().getUserId().equals(userId);
+                    
                     java.util.Map<String, Object> map = new java.util.HashMap<>();
                     map.put("reservationId", r.getId());
                     map.put("roomId", r.getRoom().getId());
@@ -161,8 +195,15 @@ public class ReservationService {
                     map.put("startHour", r.getReservationStartedAt().getHour());
                     map.put("endHour", r.getReservationEndedAt().getHour());
                     map.put("status", r.getStatus());
-                    map.put("canCancel", canCancelReservation(r));
+                    map.put("isOwner", isOwner); // 본인이 예약한 것인지 여부
+                    map.put("canCancel", isOwner && canCancelReservation(r)); // 본인이 예약한 것만 취소 가능
                     return map;
+                })
+                .sorted((a, b) -> {
+                    // 최신순 정렬
+                    String dateTimeA = (String) a.get("startDateTime");
+                    String dateTimeB = (String) b.get("startDateTime");
+                    return dateTimeB.compareTo(dateTimeA);
                 })
                 .collect(Collectors.toList());
     }

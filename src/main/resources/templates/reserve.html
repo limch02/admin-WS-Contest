@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>강의실 예약 | CNU Room</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+    <div><b>📚 CNU Room</b></div>
+    <nav>
+        <a href="index.html">홈</a>
+        <a href="mypage.html">마이페이지</a>
+        <a href="logout.html">로그아웃</a>
+    </nav>
+</header>
+
+<form>
+    <h2>강의실 검색</h2>
+    <label>날짜</label><input type="date">
+    <label>시간</label>
+    <select>
+        <option>14:00~15:00</option>
+        <option>15:00~16:00</option>
+        <option>16:00~17:00</option>
+    </select>
+    <label>최소 수용인원</label><input type="number" placeholder="예: 10">
+    <label>비품</label>
+    <select>
+        <option>전체</option>
+        <option>프로젝터</option>
+        <option>화이트보드</option>
+    </select>
+    <button type="submit">검색</button>
+</form>
+
+<table>
+    <tr><th>강의실</th><th>위치</th><th>수용인원</th><th>비품</th><th>예약</th></tr>
+    <tr><td>공학관 301호</td><td>본관 3층</td><td>30명</td><td>프로젝터</td><td><button>예약</button></td></tr>
+</table>
+
+<footer>© 2025 CNU Room Reservation System</footer>
+</body>
+</html>

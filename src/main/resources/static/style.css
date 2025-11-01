@@ -1,0 +1,153 @@
+/* ===============================
+   기본 설정
+================================*/
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+body {
+    margin: 0;
+    background-color: #f9fafb;
+    color: #1f2937;
+}
+
+/* ===============================
+   네비게이션 바
+================================*/
+header {
+    background-color: #2563eb;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+    margin-left: 1rem;
+    font-weight: 600;
+}
+
+header a:hover {
+    text-decoration: underline;
+}
+
+/* ===============================
+   공통 버튼 / 입력
+================================*/
+button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+input, select {
+    padding: 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 1rem;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+/* ===============================
+   Hero / 메인 섹션
+================================*/
+.hero {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    color: white;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* ===============================
+   테이블
+================================*/
+table {
+    width: 80%;
+    margin: 2rem auto;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+th, td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem;
+    text-align: center;
+}
+
+th {
+    background-color: #eff6ff;
+    color: #2563eb;
+}
+
+/* ===============================
+   카드 / 관리자용 섹션
+================================*/
+.card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 1rem auto;
+    width: 90%;
+}
+
+h2, h3 {
+    text-align: center;
+    color: #2563eb;
+    margin-top: 2rem;
+}
+
+/* ===============================
+   알림 박스
+================================*/
+.alert-box {
+    width: 80%;
+    margin: 2rem auto;
+    padding: 1rem;
+    background-color: #fef3c7;
+    border-radius: 8px;
+    color: #92400e;
+    font-weight: 500;
+}
+
+/* ===============================
+   푸터
+================================*/
+footer {
+    text-align: center;
+    padding: 1rem;
+    color: #6b7280;
+    background: #f3f4f6;
+    margin-top: 3rem;
+}

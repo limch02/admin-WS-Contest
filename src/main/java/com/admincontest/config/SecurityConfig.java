@@ -58,6 +58,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/users/search",
                                 "/api/classrooms",
+                                "/api/waitlist/room/**",
                                 "/",
                                 "/css/**",
                                 "/js/**",
@@ -77,6 +78,12 @@ public class SecurityConfig {
 
                         // ADMIN만 접근 가능 (API만 보호, 페이지는 프론트엔드에서 토큰 확인)
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        
+                        // 대기 신청 API는 인증 필요
+                        .requestMatchers("/api/waitlist/**").authenticated()
+                        
+                        // 예약 API는 인증 필요
+                        .requestMatchers("/api/reservations/**").authenticated()
 
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()

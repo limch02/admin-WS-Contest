@@ -47,7 +47,10 @@ public class ReservationService {
 
     public List<Integer> getAvailableTimes(Long roomId, LocalDate date) {
         // 특정 강의실과 날짜의 예약 조회
-        List<Reservation> reservations = reservationRepository.findByClassroomIdAndDate(roomId, date);
+        // 날짜 범위로 조회: 해당 날짜의 시작(00:00:00)부터 다음 날 시작 전까지
+        LocalDateTime dateStart = date.atStartOfDay();
+        LocalDateTime dateEnd = date.plusDays(1).atStartOfDay();
+        List<Reservation> reservations = reservationRepository.findByClassroomIdAndDate(roomId, dateStart, dateEnd);
         
         // 예약된 시간대 추출
         List<Integer> reservedHours = reservations.stream()

@@ -50,10 +50,9 @@
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
     const currentDate = today.getDate();
-    
-    // 최대 예약 가능 날짜 (현재 날짜 + 7일)
+    // 최대 예약 가능 날짜 (현재 날짜 + 6일)
     const maxDate = new Date(today);
-    maxDate.setDate(today.getDate() + 7);
+    maxDate.setDate(today.getDate() + 6);
     
     // 달력 초기화
     function initCalendar() {
@@ -62,7 +61,7 @@
         
         const calendarDays = document.getElementById('calendar-days');
         calendarDays.innerHTML = '';
-        
+
         // 해당 월의 첫 번째 날
         const firstDay = new Date(currentYear, currentMonth, 1);
         const firstDayOfWeek = firstDay.getDay();
@@ -111,7 +110,13 @@
             }
             
             if (isToday) {
-                dayElement.classList.add('today');
+                dayElement.classList.add('available');
+                dayElement.innerHTML = `
+                    <span class="date-number">${date}</span>
+                    <button class="add-btn" onclick="goToRoomSelection('${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}')">
+                        <span class="add-icon">+</span>
+                    </button>
+                `;
             }
             
             calendarDays.appendChild(dayElement);

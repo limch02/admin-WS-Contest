@@ -62,7 +62,7 @@
         <!-- 그룹 사용자 추가 -->
         <div class="group-members-section">
             <h3>참여 인원</h3>
-            <p class="instruction">대표 예약자 외에 참석 예정인 이용자를 개별 등록하여 주십시오. (최소 인원 이상 등록해야 예약 버튼이 활성화됩니다.)</p>
+            <p class="instruction">대표 예약자 외에 참석 예정인 이용자를 개별 등록하여 주십시오.</p>
             
             <div class="add-member-form">
                 <div class="form-row">
@@ -83,7 +83,7 @@
                 <h4>등록된 참여 인원</h4>
                 <div class="members-count">
                     <span>대표 예약자: <strong id="main-booking-user">홍길동</strong></span>
-                    <span>참여 인원: <strong id="members-count">0</strong>명</span>
+                    <span>참여 인원: <strong id="members-count">1</strong>명</span>
                     <span>최소 인원: <strong id="min-people-display">0</strong>명</span>
                 </div>
                 <ul id="members-list" class="members-ul">
@@ -116,7 +116,6 @@
     const selectedHour = parseInt(urlParams.get('hour')) || 9;
     const roomName = decodeURIComponent(urlParams.get('roomName') || '');
     const capacity = parseInt(urlParams.get('capacity')) || 10;
-    const minPeople = parseInt(urlParams.get('minPeople')) || 5;
     
     // 선택된 정보 표시
     if (selectedDate) {
@@ -127,12 +126,15 @@
     document.getElementById('display-room').textContent = roomName;
     document.getElementById('display-time').textContent = `${String(selectedHour).padStart(2, '0')}:00`;
     document.getElementById('start-time-display').textContent = `${String(selectedHour).padStart(2, '0')}:00`;
-    document.getElementById('min-people-display').textContent = minPeople;
-    
+
     // 상태 변수
     let selectedDuration = 1; // 기본 1시간
     let registeredMembers = []; // 등록된 멤버 목록
-    
+    registeredMembers.push({
+        studentId: 202212345,
+        studentName: "defaultName"
+    });
+
     // 예약 시간 선택
     function selectDuration(duration) {
         selectedDuration = duration;
@@ -226,14 +228,10 @@
     function updateReserveButton() {
         const totalPeople = registeredMembers.length + 1; // 대표 예약자 포함
         const reserveBtn = document.getElementById('reserve-btn');
-        
-        if (totalPeople >= minPeople) {
-            reserveBtn.disabled = false;
-            reserveBtn.classList.add('enabled');
-        } else {
-            reserveBtn.disabled = true;
-            reserveBtn.classList.remove('enabled');
-        }
+
+        reserveBtn.disabled = false;
+        reserveBtn.classList.add('enabled');
+
     }
     
     // 예약 완료
@@ -246,12 +244,7 @@
             alert('모임명을 입력해주세요.');
             return;
         }
-        
-        if (totalPeople < minPeople) {
-            alert(`최소 인원(${minPeople}명) 이상 등록해야 예약할 수 있습니다.`);
-            return;
-        }
-        
+
         // 예약 정보 구성
         const reservationData = {
             id: Date.now(),

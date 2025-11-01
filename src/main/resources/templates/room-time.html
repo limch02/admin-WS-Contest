@@ -98,13 +98,13 @@
     
     // 강의실 목록 (하드코딩된 데이터)
     const classrooms = [
-        { id: 1, name: '[1F] 그룹스터디 01', capacity: 10, minPeople: 7, floor: '1F' },
-        { id: 2, name: '[1F] 그룹스터디 02', capacity: 10, minPeople: 7, floor: '1F' },
-        { id: 3, name: '[1F] 그룹스터디 03', capacity: 10, minPeople: 7, floor: '1F' },
-        { id: 4, name: '[1F] 그룹스터디 04', capacity: 10, minPeople: 7, floor: '1F' },
-        { id: 5, name: '[1F] 그룹스터디 05', capacity: 6, minPeople: 4, floor: '1F' },
-        { id: 6, name: '[2F] 강의실 A', capacity: 30, minPeople: 10, floor: '2F' },
-        { id: 7, name: '[2F] 강의실 B', capacity: 25, minPeople: 8, floor: '2F' }
+        { id: 1, name: '[1F] 그룹스터디 01', capacity: 10, floor: '1F' },
+        { id: 2, name: '[1F] 그룹스터디 02', capacity: 10, floor: '1F' },
+        { id: 3, name: '[1F] 그룹스터디 03', capacity: 10, floor: '1F' },
+        { id: 4, name: '[1F] 그룹스터디 04', capacity: 10, floor: '1F' },
+        { id: 5, name: '[1F] 그룹스터디 05', capacity: 6, floor: '1F' },
+        { id: 6, name: '[2F] 강의실 A', capacity: 30, floor: '2F' },
+        { id: 7, name: '[2F] 강의실 B', capacity: 25, floor: '2F' }
     ];
     
     // 강의실 목록 로드 (프론트엔드 시뮬레이션)
@@ -225,7 +225,6 @@
                     <h3>${classroom.name}</h3>
                     <div class="room-capacity">
                         <span>정원: ${classroom.capacity}명</span>
-                        <span>최소인원: ${classroom.minPeople}명</span>
                     </div>
                 </div>
                 <div class="time-slots-grid">
@@ -259,7 +258,6 @@
                 hour: selectedHour,
                 roomName: room.name,
                 capacity: room.capacity,
-                minPeople: room.minPeople
             });
             window.location.href = `reservation-detail.html?${params.toString()}`;
         }

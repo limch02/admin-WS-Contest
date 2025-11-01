@@ -20,6 +20,7 @@ public class AdminInitializer {
     private static final String ADMIN_EMAIL = "admin@admin.com";
     private static final String ADMIN_NAME = "관리자";
 
+
     @PostConstruct
     public void initAdmin() {
         // 관리자 계정이 이미 존재하는지 확인

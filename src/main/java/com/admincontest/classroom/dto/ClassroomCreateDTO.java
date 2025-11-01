@@ -1,6 +1,6 @@
-package com.admincontest.domain.classroom.dto;
+package com.admincontest.classroom.dto;
 
-import com.admincontest.domain.classroom.domain.Classroom;
+import com.admincontest.classroom.domain.Classroom;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,10 +12,12 @@ public class ClassroomCreateDTO {
 	private String name;
 	private String location;
 	private int capacity;
+	private Integer minPeople;
+	private String floor;
 	private boolean hasWhiteboard;
 	private boolean hasProjector;
 
 	public Classroom toEntity() {
-		return Classroom.of(name, location, capacity, hasWhiteboard, hasProjector);
+		return Classroom.of(name, location, capacity, minPeople, floor, hasWhiteboard, hasProjector);
 	}
 }

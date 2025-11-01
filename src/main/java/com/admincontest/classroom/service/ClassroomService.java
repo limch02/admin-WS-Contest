@@ -1,10 +1,10 @@
-package com.admincontest.domain.classroom.service;
+package com.admincontest.classroom.service;
 
-import com.admincontest.domain.classroom.domain.Classroom;
-import com.admincontest.domain.classroom.dto.ClassroomCreateDTO;
-import com.admincontest.domain.classroom.dto.ClassroomUpdateDTO;
-import com.admincontest.domain.classroom.exception.ClassroomAlreadyExistException;
-import com.admincontest.domain.classroom.repository.ClassroomRepository;
+import com.admincontest.classroom.domain.Classroom;
+import com.admincontest.classroom.dto.ClassroomCreateDTO;
+import com.admincontest.classroom.dto.ClassroomUpdateDTO;
+import com.admincontest.classroom.exception.ClassroomAlreadyExistException;
+import com.admincontest.classroom.repository.ClassroomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +41,8 @@ public class ClassroomService {
                 updateDTO.getName(),
                 updateDTO.getLocation(),
                 updateDTO.getCapacity(),
+                updateDTO.getMinPeople(),
+                updateDTO.getFloor(),
                 updateDTO.isHasWhiteboard(),
                 updateDTO.isHasProjector()
         );

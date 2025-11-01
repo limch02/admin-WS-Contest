@@ -14,16 +14,20 @@
         <a href="/login" id="login-link">로그인</a>
         <a href="/register" id="register-link">회원가입</a>
         <a href="/admin" id="admin-link" style="display: none;">관리자</a>
+        <a href="/mypage" id="mypage-link" style="display: none;">마이페이지</a>
         <a href="#" id="logout-link" onclick="logout()" style="display: none;">로그아웃</a>
     </nav>
 </header>
 
 <main class="main-container">
-    <section class="intro">
-        <h2>환영합니다!</h2>
-        <p>이 페이지에서 강의실을 예약하고 관리할 수 있습니다.</p>
-        <button onclick="location.href='/reserve'">지금 예약하기</button>
-    </section>
+        <section class="intro">
+            <h2>환영합니다!</h2>
+            <p>이 페이지에서 강의실을 예약하고 관리할 수 있습니다.</p>
+            <div class="intro-buttons">
+                <button onclick="location.href='/search'">강의실 검색</button>
+                <button onclick="location.href='/reserve'">지금 예약하기</button>
+            </div>
+        </section>
 </main>
 
 <footer>
@@ -73,12 +77,14 @@
         const loginLink = document.getElementById('login-link');
         const registerLink = document.getElementById('register-link');
         const adminLink = document.getElementById('admin-link');
+        const mypageLink = document.getElementById('mypage-link');
         const logoutLink = document.getElementById('logout-link');
         
         // 초기 상태: 로그아웃 상태로 설정
         loginLink.style.display = 'inline';
         registerLink.style.display = 'inline';
         adminLink.style.display = 'none';
+        mypageLink.style.display = 'none';
         logoutLink.style.display = 'none';
         
         // 토큰 유효성 확인
@@ -90,6 +96,7 @@
             // 로그인된 경우
             loginLink.style.display = 'none';
             registerLink.style.display = 'none';
+            mypageLink.style.display = 'inline';
             logoutLink.style.display = 'inline';
             
             // 관리자인 경우 관리자 페이지 링크 표시

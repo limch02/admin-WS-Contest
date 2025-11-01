@@ -7,11 +7,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "Reservation")
 public class Reservation {
@@ -62,6 +64,11 @@ public class Reservation {
                 .user(user)
                 .status("ACTIVE")
                 .build();
+    }
+    
+    // 예약 상태 변경 (취소용)
+    public void cancel() {
+        this.status = "CANCELLED";
     }
 }
 

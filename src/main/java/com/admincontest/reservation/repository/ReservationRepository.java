@@ -29,5 +29,24 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByClassroomIdAndDate(@Param("roomId") Long roomId, 
                                                 @Param("startDate") LocalDateTime startDate,
                                                 @Param("endDate") LocalDateTime endDate);
+    
+    // 특정 사용자의 활성화된 미래 예약 조회
+    @Query("SELECT r FROM Reservation r WHERE r.user.userId = :userId " +
+           "AND r.reservationStartedAt >= :now " +
+           "AND r.status = 'ACTIVE'")
+    List<Reservation> findActiveFutureReservationsByUserId(@Param("userId") Long userId,
+                                                           @Param("now") LocalDateTime now);
+    
+    // 특정 사용자의 모든 예약 조회 (최신순)
+    @Query("SELECT r FROM Reservation r WHERE r.user.userId = :userId " +
+           "ORDER BY r.reservationStartedAt DESC")
+    List<Reservation> findAllByUserId(@Param("userId") Long userId);
+    
+    // 특정 사용자의 예약 조회 (상태별)
+    @Query("SELECT r FROM Reservation r WHERE r.user.userId = :userId " +
+           "AND r.status = :status " +
+           "ORDER BY r.reservationStartedAt DESC")
+    List<Reservation> findByUserIdAndStatus(@Param("userId") Long userId,
+                                           @Param("status") String status);
 }
 

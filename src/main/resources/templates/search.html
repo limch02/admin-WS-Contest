@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>강의실 검색 | CNU Room</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+    <div><b>📚 CNU Room</b></div>
+    <nav>
+        <a href="/">홈</a>
+        <a href="/reserve">예약하기</a>
+        <a href="/login" id="login-link">로그인</a>
+        <a href="/mypage" id="mypage-link" style="display: none;">마이페이지</a>
+        <a href="#" id="logout-link" onclick="logout()" style="display: none;">로그아웃</a>
+    </nav>
+</header>
+
+<main class="search-main">
+    <div class="search-container">
+        <h2>빈 강의실 검색</h2>
+        
+        <!-- 검색 조건 입력 -->
+        <div class="search-form-container">
+            <form id="search-form" class="search-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="search-date">날짜 *</label>
+                        <input type="date" id="search-date" name="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="start-hour">시작 시간 *</label>
+                        <select id="start-hour" name="startHour" required>
+                            <option value="">선택</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end-hour">종료 시간 *</label>
+                        <select id="end-hour" name="endHour" required>
+                            <option value="">선택</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="min-capacity">최소 수용인원 (선택)</label>
+                        <input type="number" id="min-capacity" name="minCapacity" min="1" placeholder="예: 10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>비품</label>
+                        <div class="equipment-checkboxes">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="filter-projector" name="hasProjector">
+                                <span>프로젝터</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="filter-whiteboard" name="hasWhiteboard">
+                                <span>화이트보드</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="search-error" class="error-message" style="display: none;"></div>
+                
+                <button type="submit" class="search-btn">검색</button>
+            </form>
+        </div>
+        
+        <!-- 검색 결과 -->
+        <div id="search-results" class="search-results" style="display: none;">
+            <h3>검색 결과</h3>
+            <div id="results-list" class="results-list">
+                <!-- 검색 결과가 동적으로 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer>© 2025 CNU Room Reservation System</footer>
+
+<script>
+    // 시간 선택 옵션 생성 (6시 ~ 21시)
+    function initTimeOptions() {
+        const startHourSelect = document.getElementById('start-hour');
+        const endHourSelect = document.getElementById('end-hour');
+        
+        for (let hour = 6; hour <= 21; hour++) {
+            const option1 = document.createElement('option');
+            option1.value = hour;
+            option1.textContent = `${String(hour).padStart(2, '0')}:00`;
+            startHourSelect.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = hour + 1;  // 종료 시간은 시작 시간 +1 이상
+            option2.textContent = `${String(hour + 1).padStart(2, '0')}:00`;
+            endHourSelect.appendChild(option2);
+        }
+        
+        // 시작 시간 변경 시 종료 시간 옵션 업데이트
+        startHourSelect.addEventListener('change', function() {
+            const startHour = parseInt(this.value);
+            endHourSelect.innerHTML = '<option value="">선택</option>';
+            
+            if (startHour) {
+                for (let hour = startHour + 1; hour <= 22; hour++) {
+                    const option = document.createElement('option');
+                    option.value = hour;
+                    option.textContent = `${String(hour).padStart(2, '0')}:00`;
+                    endHourSelect.appendChild(option);
+                }
+            }
+        });
+    }
+    
+    // 오늘 날짜를 기본값으로 설정
+    function setDefaultDate() {
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0];
+        document.getElementById('search-date').value = dateStr;
+        document.getElementById('search-date').min = dateStr;  // 과거 날짜 선택 불가
+    }
+    
+    // 검색 폼 제출
+    document.getElementById('search-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const date = document.getElementById('search-date').value;
+        const startHour = parseInt(document.getElementById('start-hour').value);
+        const endHour = parseInt(document.getElementById('end-hour').value);
+        const minCapacity = document.getElementById('min-capacity').value ? 
+                            parseInt(document.getElementById('min-capacity').value) : null;
+        const hasProjector = document.getElementById('filter-projector').checked ? true : null;
+        const hasWhiteboard = document.getElementById('filter-whiteboard').checked ? true : null;
+        
+        const errorDiv = document.getElementById('search-error');
+        errorDiv.style.display = 'none';
+        
+        // 검증
+        if (!date || !startHour || !endHour) {
+            errorDiv.textContent = '날짜와 시간을 모두 선택해주세요.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        if (startHour >= endHour) {
+            errorDiv.textContent = '종료 시간은 시작 시간보다 늦어야 합니다.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        if (endHour > 22) {
+            errorDiv.textContent = '종료 시간은 22시 이하여야 합니다.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        // 검색 요청
+        const searchData = {
+            date: date,
+            startHour: startHour,
+            endHour: endHour,
+            minCapacity: minCapacity,
+            hasProjector: hasProjector,
+            hasWhiteboard: hasWhiteboard
+        };
+        
+        try {
+            const response = await fetch('/api/classrooms/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(searchData)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || '검색 중 오류가 발생했습니다.');
+            }
+            
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            console.error('검색 오류:', error);
+            errorDiv.textContent = error.message || '검색 중 오류가 발생했습니다.';
+            errorDiv.style.display = 'block';
+        }
+    });
+    
+    // 검색 결과 표시
+    function displaySearchResults(results) {
+        const resultsContainer = document.getElementById('search-results');
+        const resultsList = document.getElementById('results-list');
+        
+        resultsContainer.style.display = 'block';
+        resultsList.innerHTML = '';
+        
+        if (results.length === 0) {
+            resultsList.innerHTML = '<p class="no-results">검색 결과가 없습니다.</p>';
+            return;
+        }
+        
+        // 예약 가능한 강의실과 불가능한 강의실 분리
+        const availableRooms = results.filter(r => r.isAvailable);
+        const unavailableRooms = results.filter(r => !r.isAvailable);
+        
+        // 예약 가능한 강의실 먼저 표시
+        if (availableRooms.length > 0) {
+            const availableSection = document.createElement('div');
+            availableSection.className = 'results-section';
+            availableSection.innerHTML = `<h4>예약 가능한 강의실 (${availableRooms.length}개)</h4>`;
+            
+            availableRooms.forEach(room => {
+                const roomCard = createRoomCard(room, true);
+                availableSection.appendChild(roomCard);
+            });
+            
+            resultsList.appendChild(availableSection);
+        }
+        
+        // 예약 불가능한 강의실 표시
+        if (unavailableRooms.length > 0) {
+            const unavailableSection = document.createElement('div');
+            unavailableSection.className = 'results-section';
+            unavailableSection.innerHTML = `<h4>예약 불가능한 강의실 (${unavailableRooms.length}개)</h4>`;
+            
+            unavailableRooms.forEach(room => {
+                const roomCard = createRoomCard(room, false);
+                unavailableSection.appendChild(roomCard);
+            });
+            
+            resultsList.appendChild(unavailableSection);
+        }
+    }
+    
+    // 강의실 카드 생성
+    function createRoomCard(room, isAvailable) {
+        const card = document.createElement('div');
+        card.className = `room-card ${isAvailable ? 'available' : 'unavailable'}`;
+        
+        const equipment = [];
+        if (room.hasProjector) equipment.push('프로젝터');
+        if (room.hasWhiteboard) equipment.push('화이트보드');
+        const equipmentText = equipment.length > 0 ? equipment.join(', ') : '없음';
+        
+        card.innerHTML = `
+            <div class="room-header">
+                <h3>${room.name} ${isAvailable ? '<span class="status-badge available">예약 가능</span>' : '<span class="status-badge unavailable">예약 불가</span>'}</h3>
+                <div class="room-info">
+                    <span>위치: ${room.location}</span>
+                    <span>수용인원: ${room.capacity}명</span>
+                    <span>비품: ${equipmentText}</span>
+                </div>
+            </div>
+        `;
+        
+        return card;
+    }
+    
+    // 로그인 상태 확인 및 UI 업데이트
+    function checkLoginStatus() {
+        const token = localStorage.getItem('token');
+        const loginLink = document.getElementById('login-link');
+        const mypageLink = document.getElementById('mypage-link');
+        const logoutLink = document.getElementById('logout-link');
+        
+        if (token) {
+            loginLink.style.display = 'none';
+            mypageLink.style.display = 'inline';
+            logoutLink.style.display = 'inline';
+        } else {
+            loginLink.style.display = 'inline';
+            mypageLink.style.display = 'none';
+            logoutLink.style.display = 'none';
+        }
+    }
+    
+    // 로그아웃
+    function logout() {
+        if (confirm('로그아웃 하시겠습니까?')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('loginId');
+            localStorage.removeItem('role');
+            window.location.href = '/login';
+        }
+    }
+    
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        initTimeOptions();
+        setDefaultDate();
+        checkLoginStatus();
+    });
+</script>
+</body>
+</html>
+

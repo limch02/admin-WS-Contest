@@ -136,10 +136,29 @@
             
             if (response.ok) {
                 // 로그인 성공
+                console.log('로그인 응답 데이터:', data);
+                console.log('토큰 존재:', !!data.token);
+                console.log('로그인 ID:', data.loginId);
+                console.log('역할:', data.role);
+                
                 // JWT 토큰 저장
+                if (!data.token) {
+                    showError('토큰을 받지 못했습니다. 다시 시도해주세요.');
+                    loginBtn.disabled = false;
+                    loginBtnText.style.display = 'inline';
+                    loginLoading.style.display = 'none';
+                    return;
+                }
+                
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('loginId', data.loginId);
                 localStorage.setItem('role', data.role);
+                
+                console.log('localStorage 저장 완료:', {
+                    token: localStorage.getItem('token') ? '저장됨' : '없음',
+                    loginId: localStorage.getItem('loginId'),
+                    role: localStorage.getItem('role')
+                });
                 
                 // 로그인 상태 유지 옵션 처리
                 if (rememberMe) {
@@ -150,8 +169,12 @@
                 
                 alert('로그인되었습니다.');
                 
-                // 홈으로 이동
-                window.location.href = '/';
+                // 관리자인 경우 관리자 페이지로, 아니면 홈으로 이동
+                if (data.role === 'ADMIN') {
+                    window.location.href = '/admin';
+                } else {
+                    window.location.href = '/';
+                }
             } else {
                 // 로그인 실패
                 showError(data.error || '로그인에 실패했습니다. ID와 비밀번호를 확인해주세요.');

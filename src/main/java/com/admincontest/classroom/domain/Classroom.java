@@ -14,11 +14,11 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "classrooms")
+@Table(name = "CLASSROOMS")
 public class Classroom {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "classroom_id")
+	@Column(name = "room_id")
 	private Long id;
 
 	@Column(name = "name", nullable = false)

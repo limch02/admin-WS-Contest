@@ -65,8 +65,15 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Claims claims = getClaimsFromToken(token);
-            return !claims.getExpiration().before(new Date());
+            boolean isExpired = claims.getExpiration().before(new Date());
+            if (isExpired) {
+                System.out.println("[JWT TokenProvider] Token is expired");
+                return false;
+            }
+            return true;
         } catch (Exception e) {
+            System.out.println("[JWT TokenProvider] Token validation error: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

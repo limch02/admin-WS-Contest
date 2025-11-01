@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마이페이지 | CNU Room</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
@@ -15,17 +16,314 @@
     </nav>
 </header>
 
-<h2>나의 예약 내역</h2>
+<main class="mypage-main">
+    <!-- 예약 내역 섹션 -->
+    <div class="mypage-section">
+        <h2>나의 예약 내역</h2>
+        <div class="table-container">
+            <table class="mypage-table" id="reservations-table">
+                <thead>
+                    <tr>
+                        <th>강의실</th>
+                        <th>날짜</th>
+                        <th>시간</th>
+                        <th>상태</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody id="reservations-tbody">
+                    <!-- 예약 목록이 동적으로 생성됩니다 -->
+                </tbody>
+            </table>
+        </div>
+        <div id="no-reservations" class="empty-message" style="display: none;">
+            예약 내역이 없습니다.
+        </div>
+    </div>
 
-<table>
-    <tr><th>강의실</th><th>날짜</th><th>시간</th><th>상태</th><th>취소</th></tr>
-    <tr><td>공학관 301호</td><td>2025-11-05</td><td>14:00~15:00</td><td>확정</td><td><button>취소</button></td></tr>
-</table>
+    <!-- 대기 신청 내역 섹션 -->
+    <div class="mypage-section">
+        <h2>나의 대기 신청</h2>
+        <div class="table-container">
+            <table class="mypage-table" id="waitlist-table">
+                <thead>
+                    <tr>
+                        <th>강의실</th>
+                        <th>날짜</th>
+                        <th>시간</th>
+                        <th>대기 순위</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody id="waitlist-tbody">
+                    <!-- 대기 목록이 동적으로 생성됩니다 -->
+                </tbody>
+            </table>
+        </div>
+        <div id="no-waitlist" class="empty-message" style="display: none;">
+            대기 신청 내역이 없습니다.
+        </div>
+    </div>
 
-<div class="alert-box">
-    🔔 예약 시작 30분 전 알림이 표시됩니다.
-</div>
+    <div class="alert-box">
+        🔔 예약 시작 30분 전 알림이 표시됩니다.<br>
+        ⏰ 예약이 취소되면 대기 순위에 따라 자동으로 예약이 할당됩니다.
+    </div>
+</main>
 
 <footer>© 2025 CNU Room Reservation System</footer>
+
+<script>
+    // 예약 데이터 가져오기
+    function getReservations() {
+        return JSON.parse(localStorage.getItem('reservations')) || [];
+    }
+    
+    // 대기 신청 데이터 가져오기
+    function getWaitlist() {
+        return JSON.parse(localStorage.getItem('waitlist')) || [];
+    }
+    
+    // 현재 사용자 확인
+    function getCurrentUser() {
+        return JSON.parse(localStorage.getItem('user')) || { username: 'guest' };
+    }
+    
+    // 예약 목록 렌더링
+    function renderReservations() {
+        const reservations = getReservations();
+        const currentUser = getCurrentUser();
+        const userReservations = reservations.filter(r => r.mainBooker === currentUser.username);
+        
+        const tbody = document.getElementById('reservations-tbody');
+        const noReservations = document.getElementById('no-reservations');
+        
+        if (userReservations.length === 0) {
+            tbody.innerHTML = '';
+            noReservations.style.display = 'block';
+            return;
+        }
+        
+        noReservations.style.display = 'none';
+        tbody.innerHTML = '';
+        
+        userReservations.forEach(reservation => {
+            const tr = document.createElement('tr');
+            const timeRange = `${String(reservation.startHour).padStart(2, '0')}:00 ~ ${String(reservation.endHour).padStart(2, '0')}:00`;
+            
+            tr.innerHTML = `
+                <td>${reservation.roomName}</td>
+                <td>${reservation.date}</td>
+                <td>${timeRange}</td>
+                <td><span class="status-badge confirmed">확정</span></td>
+                <td>
+                    <button class="cancel-reservation-btn" onclick="cancelReservation('${reservation.id}')">
+                        취소
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    // 대기 목록 렌더링
+    function renderWaitlist() {
+        const waitlist = getWaitlist();
+        const currentUser = getCurrentUser();
+        const userWaitlist = waitlist
+            .filter(w => w.username === currentUser.username)
+            .sort((a, b) => {
+                // 같은 강의실/날짜/시간 내에서 priority로 정렬
+                if (a.roomId === b.roomId && a.date === b.date && a.hour === b.hour) {
+                    return a.priority - b.priority;
+                }
+                return 0;
+            });
+        
+        const tbody = document.getElementById('waitlist-tbody');
+        const noWaitlist = document.getElementById('no-waitlist');
+        
+        if (userWaitlist.length === 0) {
+            tbody.innerHTML = '';
+            noWaitlist.style.display = 'block';
+            return;
+        }
+        
+        noWaitlist.style.display = 'none';
+        tbody.innerHTML = '';
+        
+        // 같은 시간대의 대기 순위 계산
+        const waitlistMap = new Map();
+        waitlist.forEach(w => {
+            const key = `${w.roomId}-${w.date}-${w.hour}`;
+            if (!waitlistMap.has(key)) {
+                waitlistMap.set(key, []);
+            }
+            waitlistMap.get(key).push(w);
+        });
+        
+        userWaitlist.forEach(item => {
+            const key = `${item.roomId}-${item.date}-${item.hour}`;
+            const allWaitlist = waitlistMap.get(key) || [];
+            const sortedWaitlist = allWaitlist.sort((a, b) => a.priority - b.priority);
+            const currentIndex = sortedWaitlist.findIndex(w => w.id === item.id);
+            const priority = currentIndex + 1;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.roomName}</td>
+                <td>${item.date}</td>
+                <td>${String(item.hour).padStart(2, '0')}:00</td>
+                <td><span class="waitlist-priority">${priority}순위</span></td>
+                <td>
+                    <button class="cancel-waitlist-btn" onclick="cancelWaitlist('${item.id}')">
+                        취소
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    // 예약 취소
+    function cancelReservation(reservationId) {
+        if (!confirm('정말 예약을 취소하시겠습니까?')) {
+            return;
+        }
+        
+        const reservations = getReservations();
+        const reservation = reservations.find(r => r.id === reservationId);
+        
+        if (!reservation) return;
+        
+        // 예약 삭제
+        const updatedReservations = reservations.filter(r => r.id !== reservationId);
+        localStorage.setItem('reservations', JSON.stringify(updatedReservations));
+        
+        // 대기 순위 확인 및 자동 할당
+        checkAndAssignWaitlist(reservation.roomId, reservation.date, reservation.startHour);
+        
+        alert('예약이 취소되었습니다.');
+        renderReservations();
+        renderWaitlist();
+    }
+    
+    // 대기 신청 취소
+    function cancelWaitlist(waitlistId) {
+        if (!confirm('정말 대기 신청을 취소하시겠습니까?')) {
+            return;
+        }
+        
+        const waitlist = getWaitlist();
+        const updatedWaitlist = waitlist.filter(w => w.id !== waitlistId);
+        localStorage.setItem('waitlist', JSON.stringify(updatedWaitlist));
+        
+        // 대기 순위 재계산
+        recalculateWaitlistPriority();
+        
+        alert('대기 신청이 취소되었습니다.');
+        renderWaitlist();
+    }
+    
+    // 대기 순위 확인 및 자동 할당
+    function checkAndAssignWaitlist(roomId, date, hour) {
+        const waitlist = getWaitlist();
+        const relevantWaitlist = waitlist
+            .filter(w => w.roomId === roomId && w.date === date && w.hour === hour)
+            .sort((a, b) => a.priority - b.priority);
+        
+        if (relevantWaitlist.length === 0) return;
+        
+        // 대기 1순위 확인
+        const firstInLine = relevantWaitlist[0];
+        const reservations = getReservations();
+        const userReservations = reservations.filter(r => r.mainBooker === firstInLine.username);
+        
+        // 대기 1순위 사용자의 예약이 3개 이상이면 건너뛰기
+        if (userReservations.length >= 3) {
+            // 대기 신청 삭제하고 다음 순위로
+            const updatedWaitlist = waitlist.filter(w => w.id !== firstInLine.id);
+            localStorage.setItem('waitlist', JSON.stringify(updatedWaitlist));
+            
+            // 재귀적으로 다음 순위 확인
+            setTimeout(() => {
+                checkAndAssignWaitlist(roomId, date, hour);
+            }, 100);
+            return;
+        }
+        
+        // 대기 1순위에게 예약 자동 할당
+        const newReservation = {
+            id: Date.now(),
+            roomId: roomId,
+            roomName: firstInLine.roomName,
+            date: date,
+            startHour: hour,
+            endHour: hour + 1, // 기본 1시간
+            duration: 1,
+            mainBooker: firstInLine.username,
+            members: [],
+            totalPeople: 1,
+            meetingName: '대기 신청으로 자동 할당',
+            meetingNote: '대기 신청에서 자동으로 할당된 예약입니다.',
+            status: 'confirmed'
+        };
+        
+        reservations.push(newReservation);
+        localStorage.setItem('reservations', JSON.stringify(reservations));
+        
+        // 대기 신청 삭제
+        const updatedWaitlist = waitlist.filter(w => w.id !== firstInLine.id);
+        localStorage.setItem('waitlist', JSON.stringify(updatedWaitlist));
+        
+        // 대기 순위 재계산
+        recalculateWaitlistPriority();
+        
+        // 알림 (실제로는 서버에서 처리)
+        alert(`대기 순위 1번 사용자에게 예약이 자동 할당되었습니다.\n강의실: ${firstInLine.roomName}\n날짜: ${date}\n시간: ${String(hour).padStart(2, '0')}:00`);
+    }
+    
+    // 대기 순위 재계산
+    function recalculateWaitlistPriority() {
+        const waitlist = getWaitlist();
+        const waitlistMap = new Map();
+        
+        // 같은 시간대별로 그룹화
+        waitlist.forEach(w => {
+            const key = `${w.roomId}-${w.date}-${w.hour}`;
+            if (!waitlistMap.has(key)) {
+                waitlistMap.set(key, []);
+            }
+            waitlistMap.get(key).push(w);
+        });
+        
+        // 각 그룹 내에서 priority 재계산
+        waitlistMap.forEach((group, key) => {
+            group.sort((a, b) => {
+                if (a.priority !== b.priority) {
+                    return a.priority - b.priority;
+                }
+                return new Date(a.createdAt) - new Date(b.createdAt);
+            });
+            
+            group.forEach((item, index) => {
+                item.priority = index + 1;
+            });
+        });
+        
+        localStorage.setItem('waitlist', JSON.stringify(waitlist));
+    }
+    
+    // 페이지 로드 시 렌더링
+    document.addEventListener('DOMContentLoaded', function() {
+        renderReservations();
+        renderWaitlist();
+        
+        // 주기적으로 대기 목록 새로고침 (실제로는 서버에서 처리)
+        setInterval(() => {
+            renderWaitlist();
+        }, 5000);
+    });
+</script>
 </body>
 </html>

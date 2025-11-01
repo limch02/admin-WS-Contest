@@ -252,13 +252,46 @@
             return;
         }
         
+        // 예약 정보 구성
+        const reservationData = {
+            id: Date.now(),
+            date: selectedDate,
+            roomId: roomId,
+            roomName: roomName,
+            startHour: selectedHour,
+            duration: selectedDuration,
+            endHour: selectedHour + selectedDuration,
+            meetingName: meetingName,
+            meetingNote: meetingNote,
+            mainBooker: '홍길동', // TODO: 실제로는 로그인한 사용자 정보 사용
+            members: registeredMembers,
+            totalPeople: totalPeople,
+            status: 'confirmed'
+        };
+        
+        // localStorage에 예약 저장
+        const reservations = JSON.parse(localStorage.getItem('reservations')) || [];
+        reservations.push(reservationData);
+        localStorage.setItem('reservations', JSON.stringify(reservations));
+        
         // 프론트엔드 시뮬레이션 (서버 호출 없음)
         alert(`예약이 완료되었습니다!\n\n등록된 모든 인원(${totalPeople}명)에게 알림이 발송되었습니다.\n\n날짜: ${selectedDate}\n강의실: ${roomName}\n시간: ${String(selectedHour).padStart(2, '0')}:00 ~ ${String(selectedHour + selectedDuration).padStart(2, '0')}:00\n참여 인원: ${totalPeople}명`);
+        
+        // 예약 완료 후 대기 순위 확인 (다른 사용자가 대기 중일 수 있음)
+        // 실제로는 서버에서 처리
+        checkWaitlistAfterReservation(roomId, selectedDate, selectedHour);
         
         // 예약 완료 후 마이페이지로 이동
         setTimeout(() => {
             window.location.href = 'mypage.html';
         }, 1000);
+    }
+    
+    // 예약 완료 후 대기 순위 확인 (다른 페이지에서 예약이 생성되었을 때)
+    function checkWaitlistAfterReservation(roomId, date, hour) {
+        // 실제로는 서버에서 처리
+        // 여기서는 localStorage 기반으로 동작 확인
+        console.log('예약 완료 후 대기 순위 확인:', { roomId, date, hour });
     }
     
     // 예약 취소

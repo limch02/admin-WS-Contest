@@ -42,6 +42,13 @@
                 <li>최소 인원 이상 등록해야 예약이 완료됩니다.</li>
                 <li>예약 완료 후 등록된 모든 인원에게 알림이 발송됩니다.</li>
             </ul>
+            <h4>대기 신청 규칙</h4>
+            <ul>
+                <li>예약이 꽉 찬 시간대에 대기 신청을 할 수 있습니다.</li>
+                <li>현재 예약이 3개인 경우 대기 신청을 할 수 없습니다.</li>
+                <li>예약이 취소되면 대기 1순위 사용자에게 자동으로 예약이 할당됩니다.</li>
+                <li>대기 1순위 사용자의 예약이 3개면 대기 신청이 삭제되고 다음 사용자에게 할당됩니다.</li>
+            </ul>
             <h4>주의사항</h4>
             <ul>
                 <li>예약 시간 10분 전까지는 취소 가능합니다.</li>
@@ -50,6 +57,28 @@
             </ul>
         </div>
         <button class="modal-close-btn" onclick="closeInfoModal()">확인</button>
+    </div>
+</div>
+
+<!-- 대기 신청 모달 -->
+<div id="waitlist-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeWaitlistModal()">&times;</span>
+        <h3>대기 신청</h3>
+        <div class="waitlist-info">
+            <p><strong>강의실:</strong> <span id="waitlist-room-name"></span></p>
+            <p><strong>날짜:</strong> <span id="waitlist-date"></span></p>
+            <p><strong>시간:</strong> <span id="waitlist-time"></span></p>
+        </div>
+        <div class="waitlist-warning">
+            <p>⚠️ 해당 시간대는 이미 예약이 완료되었습니다.</p>
+            <p>예약이 취소되면 대기 순위에 따라 자동으로 예약이 할당됩니다.</p>
+        </div>
+        <div id="waitlist-error" class="error-message" style="display: none;"></div>
+        <div class="modal-actions">
+            <button type="button" class="cancel-modal-btn" onclick="closeWaitlistModal()">취소</button>
+            <button type="button" class="submit-modal-btn" onclick="submitWaitlist()">대기 신청</button>
+        </div>
     </div>
 </div>
 
@@ -107,6 +136,43 @@
         return slots;
     }
     
+    // 예약 데이터 가져오기 (프론트엔드 시뮬레이션)
+    function getReservations() {
+        return JSON.parse(localStorage.getItem('reservations')) || [];
+    }
+    
+    // 대기 신청 데이터 가져오기
+    function getWaitlist() {
+        return JSON.parse(localStorage.getItem('waitlist')) || [];
+    }
+    
+    // 현재 사용자의 예약 개수 확인
+    function getCurrentUserReservationCount() {
+        const reservations = getReservations();
+        const currentUser = JSON.parse(localStorage.getItem('user')) || { username: 'guest' };
+        return reservations.filter(r => r.mainBooker === currentUser.username).length;
+    }
+    
+    // 특정 강의실/날짜/시간의 예약 개수 확인
+    function getReservationCount(roomId, date, hour) {
+        const reservations = getReservations();
+        return reservations.filter(r => 
+            r.roomId === roomId && 
+            r.date === date && 
+            r.startHour === hour
+        ).length;
+    }
+    
+    // 특정 강의실/날짜/시간의 대기 신청 개수 확인
+    function getWaitlistCount(roomId, date, hour) {
+        const waitlist = getWaitlist();
+        return waitlist.filter(w => 
+            w.roomId === roomId && 
+            w.date === date && 
+            w.hour === hour
+        ).length;
+    }
+    
     // 강의실 목록 렌더링
     async function renderRooms() {
         const roomsList = document.getElementById('rooms-list');
@@ -120,10 +186,35 @@
             roomCard.className = 'room-card';
             
             const timeSlotsHTML = timeSlots.map(slot => {
+                const isReserved = getReservationCount(classroom.id, selectedDate, slot.hour) > 0;
+                const isAvailable = slot.available && !isReserved;
+                const waitlistCount = getWaitlistCount(classroom.id, selectedDate, slot.hour);
+                
+                // 예약 불가능하지만 대기 신청 가능한 경우
+                if (!slot.available || isReserved) {
+                    const currentReservations = getCurrentUserReservationCount();
+                    const canWaitlist = currentReservations < 3 && !waitlistExists(classroom.id, selectedDate, slot.hour);
+                    
+                    return `
+                        <div class="time-slot-container">
+                            <button class="time-slot unavailable" disabled>
+                                ${slot.display}
+                            </button>
+                            ${canWaitlist ? `
+                                <button class="waitlist-btn" onclick="openWaitlistModal(${classroom.id}, ${slot.hour}, '${selectedDate}', '${classroom.name}')">
+                                    대기신청
+                                </button>
+                            ` : ''}
+                            ${waitlistCount > 0 ? `
+                                <span class="waitlist-count">대기 ${waitlistCount}명</span>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+                
                 return `
-                    <button class="time-slot ${slot.available ? 'available' : 'unavailable'}" 
-                            onclick="selectTime(${classroom.id}, ${slot.hour}, '${selectedDate}')"
-                            ${!slot.available ? 'disabled' : ''}>
+                    <button class="time-slot available" 
+                            onclick="selectTime(${classroom.id}, ${slot.hour}, '${selectedDate}')">
                         ${slot.display}
                     </button>
                 `;
@@ -144,6 +235,18 @@
             
             roomsList.appendChild(roomCard);
         }
+    }
+    
+    // 대기 신청이 이미 존재하는지 확인
+    function waitlistExists(roomId, date, hour) {
+        const waitlist = getWaitlist();
+        const currentUser = JSON.parse(localStorage.getItem('user')) || { username: 'guest' };
+        return waitlist.some(w => 
+            w.roomId === roomId && 
+            w.date === date && 
+            w.hour === hour &&
+            w.username === currentUser.username
+        );
     }
     
     // 시간 선택 시 예약 상세 화면으로 이동
@@ -178,6 +281,82 @@
         if (event.target === modal || event.target.classList.contains('close')) {
             closeInfoModal();
         }
+    }
+    
+    // 대기 신청 모달 열기
+    function openWaitlistModal(roomId, hour, date, roomName) {
+        const currentReservations = getCurrentUserReservationCount();
+        
+        if (currentReservations >= 3) {
+            alert('현재 예약이 3개 이상이어서 대기 신청을 할 수 없습니다.');
+            return;
+        }
+        
+        // 이미 대기 신청한 경우
+        if (waitlistExists(roomId, date, hour)) {
+            alert('이미 대기 신청한 시간대입니다.');
+            return;
+        }
+        
+        document.getElementById('waitlist-room-name').textContent = roomName;
+        document.getElementById('waitlist-date').textContent = formatDate(date);
+        document.getElementById('waitlist-time').textContent = `${String(hour).padStart(2, '0')}:00`;
+        
+        window.currentWaitlistData = { roomId, hour, date, roomName };
+        document.getElementById('waitlist-modal').style.display = 'block';
+        document.getElementById('waitlist-error').style.display = 'none';
+    }
+    
+    // 대기 신청 모달 닫기
+    function closeWaitlistModal() {
+        document.getElementById('waitlist-modal').style.display = 'none';
+        window.currentWaitlistData = null;
+    }
+    
+    // 날짜 포맷팅
+    function formatDate(dateString) {
+        const date = new Date(dateString + 'T00:00:00');
+        return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+    }
+    
+    // 대기 신청 제출
+    function submitWaitlist() {
+        if (!window.currentWaitlistData) return;
+        
+        const currentReservations = getCurrentUserReservationCount();
+        if (currentReservations >= 3) {
+            document.getElementById('waitlist-error').textContent = '현재 예약이 3개 이상이어서 대기 신청을 할 수 없습니다.';
+            document.getElementById('waitlist-error').style.display = 'block';
+            return;
+        }
+        
+        const { roomId, hour, date, roomName } = window.currentWaitlistData;
+        const waitlist = getWaitlist();
+        const currentUser = JSON.parse(localStorage.getItem('user')) || { username: 'guest' };
+        
+        // 대기 순위 계산
+        const existingWaitlist = waitlist.filter(w => 
+            w.roomId === roomId && w.date === date && w.hour === hour
+        );
+        const priority = existingWaitlist.length + 1;
+        
+        const newWaitlistItem = {
+            id: Date.now(),
+            roomId: roomId,
+            roomName: roomName,
+            date: date,
+            hour: hour,
+            username: currentUser.username,
+            priority: priority,
+            createdAt: new Date().toISOString()
+        };
+        
+        waitlist.push(newWaitlistItem);
+        localStorage.setItem('waitlist', JSON.stringify(waitlist));
+        
+        alert('대기 신청이 완료되었습니다.\n대기 순위: ' + priority + '번째');
+        closeWaitlistModal();
+        renderRooms(); // 목록 새로고침
     }
     
     // 페이지 로드 시 강의실 목록 렌더링

@@ -1254,6 +1254,160 @@ footer {
 }
 
 /* =============================== */
+/*   대기 신청 관련 스타일        */
+/*================================ */
+.time-slot-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+}
+
+.waitlist-btn {
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.waitlist-btn:hover {
+    background-color: #e0a800;
+}
+
+.waitlist-count {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.waitlist-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.waitlist-info p {
+    margin: 5px 0;
+    color: #495057;
+}
+
+.waitlist-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.waitlist-warning p {
+    margin: 5px 0;
+    color: #856404;
+    font-size: 14px;
+}
+
+/* 마이페이지 스타일 */
+.mypage-main {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.mypage-section {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.mypage-section h2 {
+    color: #264653;
+    font-size: 24px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.mypage-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+}
+
+.mypage-table thead {
+    background-color: #f8f9fa;
+}
+
+.mypage-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.mypage-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+}
+
+.mypage-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.confirmed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.waitlist-priority {
+    font-weight: 700;
+    color: #2a9d8f;
+    font-size: 14px;
+}
+
+.cancel-reservation-btn,
+.cancel-waitlist-btn {
+    padding: 6px 16px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.cancel-reservation-btn:hover,
+.cancel-waitlist-btn:hover {
+    background-color: #c82333;
+}
+
+.empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* =============================== */
 /*   반응형 디자인                */
 /*================================ */
 @media (max-width: 768px) {
@@ -1451,6 +1605,36 @@ footer {
     .cancel-modal-btn,
     .submit-modal-btn {
         width: 100%;
+    }
+
+    .mypage-main {
+        padding: 15px;
+    }
+
+    .mypage-section {
+        padding: 20px;
+    }
+
+    .mypage-table {
+        font-size: 14px;
+    }
+
+    .mypage-table th,
+    .mypage-table td {
+        padding: 10px 8px;
+    }
+
+    .time-slot-container {
+        gap: 3px;
+    }
+
+    .waitlist-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    .waitlist-count {
+        font-size: 9px;
     }
 }
 

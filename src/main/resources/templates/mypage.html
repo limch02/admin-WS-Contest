@@ -22,6 +22,7 @@
     <!-- 탭 메뉴 -->
     <div class="mypage-tabs">
         <button class="tab-btn active" id="reservations-tab" onclick="showTab('reservations')">나의 예약 내역</button>
+        <button class="tab-btn" id="waitlist-tab" onclick="showTab('waitlist')">나의 대기 신청</button>
         <button class="tab-btn" id="timeline-tab" onclick="showTab('timeline')">강의실 예약 현황</button>
     </div>
     
@@ -47,6 +48,30 @@
         </div>
         <div id="no-reservations" class="empty-message" style="display: none;">
             예약 내역이 없습니다.
+        </div>
+    </div>
+    
+    <!-- 나의 대기 신청 탭 -->
+    <div id="waitlist-section" class="mypage-section" style="display: none;">
+        <h2>나의 대기 신청</h2>
+        <div class="table-container">
+            <table class="mypage-table" id="waitlist-table">
+                <thead>
+                    <tr>
+                        <th>강의실</th>
+                        <th>날짜</th>
+                        <th>시간</th>
+                        <th>대기 순위</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody id="waitlist-tbody">
+                    <!-- 대기 신청 목록이 동적으로 생성됩니다 -->
+                </tbody>
+            </table>
+        </div>
+        <div id="no-waitlist" class="empty-message" style="display: none;">
+            대기 신청 내역이 없습니다.
         </div>
     </div>
     
@@ -132,6 +157,7 @@
     function showTab(tabName) {
         // 모든 탭 숨기기
         document.getElementById('reservations-section').style.display = 'none';
+        document.getElementById('waitlist-section').style.display = 'none';
         document.getElementById('timeline-section').style.display = 'none';
         
         // 모든 탭 버튼 비활성화
@@ -142,6 +168,10 @@
             document.getElementById('reservations-section').style.display = 'block';
             document.getElementById('reservations-tab').classList.add('active');
             loadMyReservations();
+        } else if (tabName === 'waitlist') {
+            document.getElementById('waitlist-section').style.display = 'block';
+            document.getElementById('waitlist-tab').classList.add('active');
+            loadMyWaitlists();
         } else if (tabName === 'timeline') {
             document.getElementById('timeline-section').style.display = 'block';
             document.getElementById('timeline-tab').classList.add('active');
@@ -232,6 +262,110 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+    
+    // 나의 대기 신청 목록 로드
+    async function loadMyWaitlists() {
+        const token = getAuthToken();
+        if (!token) {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/waitlist/my', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error('대기 신청 목록 조회 실패');
+            }
+            
+            const waitlists = await response.json();
+            renderWaitlists(waitlists);
+        } catch (error) {
+            console.error('대기 신청 목록 로드 오류:', error);
+            alert('대기 신청 목록을 불러오는 중 오류가 발생했습니다.');
+        }
+    }
+    
+    // 대기 신청 목록 렌더링
+    function renderWaitlists(waitlists) {
+        const tbody = document.getElementById('waitlist-tbody');
+        const noWaitlist = document.getElementById('no-waitlist');
+        
+        tbody.innerHTML = '';
+        
+        if (waitlists.length === 0) {
+            noWaitlist.style.display = 'block';
+            return;
+        }
+        
+        noWaitlist.style.display = 'none';
+        
+        waitlists.forEach(waitlist => {
+            const tr = document.createElement('tr');
+            const date = new Date(waitlist.date + 'T00:00:00');
+            const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            const timeRange = `${String(waitlist.startHour).padStart(2, '0')}:00 ~ ${String(waitlist.endHour).padStart(2, '0')}:00`;
+            
+            tr.innerHTML = `
+                <td>${waitlist.roomName}</td>
+                <td>${formattedDate}</td>
+                <td>${timeRange}</td>
+                <td><span class="waitlist-priority">${waitlist.queuePosition}순위</span></td>
+                <td>
+                    <button class="cancel-waitlist-btn" onclick="cancelWaitlist(${waitlist.waitlistId})">취소</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    // 대기 신청 취소
+    async function cancelWaitlist(waitlistId) {
+        if (!confirm('정말 대기 신청을 취소하시겠습니까?')) {
+            return;
+        }
+        
+        const token = getAuthToken();
+        if (!token) {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/waitlist/${waitlistId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(data.message || '대기 신청이 취소되었습니다.');
+                loadMyWaitlists(); // 목록 새로고침
+            } else {
+                alert(data.error || '대기 신청 취소에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('대기 신청 취소 오류:', error);
+            alert('대기 신청 취소 중 오류가 발생했습니다.');
+        }
     }
     
     // 예약 취소

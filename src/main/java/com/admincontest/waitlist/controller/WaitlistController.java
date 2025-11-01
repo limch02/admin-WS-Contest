@@ -89,5 +89,35 @@ public class WaitlistController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
+    
+    /**
+     * 대기 신청 취소
+     */
+    @DeleteMapping("/{waitlistId}")
+    public ResponseEntity<?> cancelWaitlist(@PathVariable Long waitlistId) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "인증이 필요합니다.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            }
+            
+            String loginId = authentication.getName();
+            waitlistService.cancelWaitlist(waitlistId, loginId);
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "대기 신청이 취소되었습니다.");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "대기 신청 취소 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 }
 

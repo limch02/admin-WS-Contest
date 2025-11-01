@@ -7,6 +7,7 @@ import com.admincontest.reservation.dto.ReservationRequest;
 import com.admincontest.reservation.repository.ReservationRepository;
 import com.admincontest.user.domain.User;
 import com.admincontest.user.repository.UserRepository;
+import com.admincontest.waitlist.service.WaitlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ClassroomService classroomService;
     private final UserRepository userRepository;
+    private final WaitlistService waitlistService;
 
     @Transactional
     public Long createReservation(ReservationRequest request) {
@@ -222,6 +224,13 @@ public class ReservationService {
         // 예약 상태를 CANCELLED로 변경
         reservation.cancel();
         reservationRepository.save(reservation);
+        
+        // 예약 취소 시 대기 목록에서 자동 할당 처리
+        waitlistService.processWaitlistOnReservationCancel(
+                reservation.getRoom().getId(),
+                reservation.getReservationStartedAt(),
+                reservation.getReservationEndedAt()
+        );
     }
     
     /**

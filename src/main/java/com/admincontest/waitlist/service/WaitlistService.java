@@ -46,13 +46,13 @@ public class WaitlistService {
         LocalDateTime startDateTime = date.atTime(request.getStartHour(), 0);
         LocalDateTime endDateTime = date.atTime(request.getEndHour(), 0);
         
-        // 사용자의 현재 예약 개수 확인 (최대 3개 제한)
-        Long userReservationCount = reservationRepository.findAll().stream()
-                .filter(r -> r.getUser().getUserId().equals(user.getUserId()) && "ACTIVE".equals(r.getStatus()))
-                .count();
+        // 사용자의 활성화된 미래 예약 개수 확인 (최대 3개 제한)
+        LocalDateTime now = LocalDateTime.now();
+        List<com.admincontest.reservation.domain.Reservation> activeFutureReservations = 
+                reservationRepository.findActiveFutureReservationsByUserId(user.getUserId(), now);
         
-        if (userReservationCount >= 3) {
-            throw new IllegalArgumentException("현재 예약이 3개 이상이어서 대기 신청을 할 수 없습니다.");
+        if (activeFutureReservations.size() >= 3) {
+            throw new IllegalArgumentException("현재 활성화된 예약이 3개 이상이어서 대기 신청을 할 수 없습니다.");
         }
         
         // 중복 대기 신청 확인
@@ -163,6 +163,93 @@ public class WaitlistService {
                     return map;
                 })
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * 대기 신청 취소
+     */
+    @Transactional
+    public void cancelWaitlist(Long waitlistId, String loginId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new IllegalArgumentException("대기 신청을 찾을 수 없습니다."));
+        
+        // 본인의 대기 신청인지 확인
+        if (!waitlist.getUser().getUserId().equals(user.getUserId())) {
+            throw new IllegalArgumentException("본인의 대기 신청만 취소할 수 있습니다.");
+        }
+        
+        // 이미 취소된 대기 신청인지 확인
+        if ("CANCELLED".equals(waitlist.getStatus())) {
+            throw new IllegalArgumentException("이미 취소된 대기 신청입니다.");
+        }
+        
+        // 대기 신청 취소
+        waitlist.cancel();
+        waitlistRepository.save(waitlist);
+    }
+    
+    /**
+     * 예약 취소 시 대기 1순위 자동 할당 처리
+     */
+    @Transactional
+    public void processWaitlistOnReservationCancel(Long roomId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        LocalDate date = startDateTime.toLocalDate();
+        LocalDateTime dateStart = date.atStartOfDay();
+        LocalDateTime dateEnd = date.plusDays(1).atStartOfDay();
+        
+        // 해당 시간대의 대기 목록 조회 (순위 순으로)
+        List<Waitlist> waitlists = waitlistRepository.findByRoomIdAndDateRange(roomId, dateStart, dateEnd)
+                .stream()
+                .filter(w -> "WAITING".equals(w.getStatus()))
+                .filter(w -> {
+                    // 시간대가 겹치는지 확인
+                    return (startDateTime.isBefore(w.getReservationEndedAt()) && 
+                           endDateTime.isAfter(w.getReservationStartedAt()));
+                })
+                .sorted((a, b) -> Long.compare(a.getQueuePosition(), b.getQueuePosition()))
+                .collect(Collectors.toList());
+        
+        if (waitlists.isEmpty()) {
+            return; // 대기 목록이 없으면 종료
+        }
+        
+        // 대기 1순위부터 순차적으로 처리
+        for (Waitlist waitlist : waitlists) {
+            User waitlistUser = waitlist.getUser();
+            
+            // 대기 신청자의 활성화된 미래 예약 개수 확인
+            LocalDateTime now = LocalDateTime.now();
+            List<com.admincontest.reservation.domain.Reservation> userReservations = 
+                    reservationRepository.findActiveFutureReservationsByUserId(waitlistUser.getUserId(), now);
+            
+            // 예약이 3개 미만인 경우에만 예약 할당
+            if (userReservations.size() < 3) {
+                // 예약 생성
+                com.admincontest.reservation.domain.Reservation newReservation = 
+                        com.admincontest.reservation.domain.Reservation.of(
+                                waitlist.getReservationStartedAt(),
+                                waitlist.getReservationEndedAt(),
+                                waitlist.getRoom(),
+                                waitlistUser
+                        );
+                reservationRepository.save(newReservation);
+                
+                // 대기 신청을 APPROVED로 변경
+                waitlist.approve();
+                waitlistRepository.save(waitlist);
+                
+                // 성공적으로 할당했으므로 종료
+                return;
+            } else {
+                // 예약이 3개 이상이면 해당 대기 신청 삭제하고 다음 순위 확인
+                waitlist.cancel();
+                waitlistRepository.save(waitlist);
+                // 다음 순위로 계속 진행
+            }
+        }
     }
 }
 

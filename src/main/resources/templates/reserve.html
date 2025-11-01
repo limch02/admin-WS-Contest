@@ -4,15 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>강의실 예약 | CNU Room</title>
-    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header>
     <div><b>📚 CNU Room</b></div>
     <nav>
-        <a href="index.html">홈</a>
-        <a href="mypage.html">마이페이지</a>
-        <a href="logout.html">로그아웃</a>
+        <a href="/">홈</a>
+        <a href="/reserve">예약하기</a>
+        <a href="/login" id="login-link">로그인</a>
+        <a href="#" id="mypage-link" style="display: none;">마이페이지</a>
+        <a href="#" id="logout-link" onclick="logout()" style="display: none;">로그아웃</a>
     </nav>
 </header>
 
@@ -133,9 +135,40 @@
         window.location.href = `room-time.html?date=${selectedDate}`;
     }
     
-    // 페이지 로드 시 달력 초기화
+    // 로그인 상태 확인 및 UI 업데이트
+    function checkLoginStatus() {
+        const token = localStorage.getItem('token');
+        const loginLink = document.getElementById('login-link');
+        const mypageLink = document.getElementById('mypage-link');
+        const logoutLink = document.getElementById('logout-link');
+        
+        if (token) {
+            // 로그인된 경우
+            loginLink.style.display = 'none';
+            mypageLink.style.display = 'inline';
+            logoutLink.style.display = 'inline';
+        } else {
+            // 로그인되지 않은 경우
+            loginLink.style.display = 'inline';
+            mypageLink.style.display = 'none';
+            logoutLink.style.display = 'none';
+        }
+    }
+    
+    // 로그아웃
+    function logout() {
+        if (confirm('로그아웃 하시겠습니까?')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('loginId');
+            localStorage.removeItem('role');
+            window.location.href = '/login';
+        }
+    }
+    
+    // 페이지 로드 시 달력 초기화 및 로그인 상태 확인
     document.addEventListener('DOMContentLoaded', function() {
         initCalendar();
+        checkLoginStatus();
     });
 </script>
 </body>

@@ -70,6 +70,7 @@ public class WaitlistService {
         List<com.admincontest.reservation.domain.Reservation> existingReservations = 
                 reservationRepository.findByClassroomIdAndDate(classroom.getId(), dateStart, dateEnd);
         
+        // 해당 시간대에 예약이 있는지 확인
         boolean hasReservation = existingReservations.stream()
                 .anyMatch(r -> {
                     LocalDateTime rStart = r.getReservationStartedAt();
@@ -80,6 +81,20 @@ public class WaitlistService {
         
         if (!hasReservation) {
             throw new IllegalArgumentException("해당 시간대에 예약이 없어 대기 신청을 할 수 없습니다.");
+        }
+        
+        // 현재 사용자가 이미 해당 시간대에 예약했는지 확인 (예약한 사용자는 대기 신청 불가)
+        boolean userHasReservation = existingReservations.stream()
+                .anyMatch(r -> {
+                    LocalDateTime rStart = r.getReservationStartedAt();
+                    LocalDateTime rEnd = r.getReservationEndedAt();
+                    return r.getUser().getUserId().equals(user.getUserId()) &&
+                           (startDateTime.isBefore(rEnd) && endDateTime.isAfter(rStart)) &&
+                           "ACTIVE".equals(r.getStatus());
+                });
+        
+        if (userHasReservation) {
+            throw new IllegalArgumentException("이미 해당 시간대에 예약하셨습니다. 예약한 시간대는 대기 신청할 수 없습니다.");
         }
         
         // 큐 순위 계산

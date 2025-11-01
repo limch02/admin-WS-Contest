@@ -21,9 +21,10 @@ public class ClassroomService {
 
     @Transactional
     public Long createClassroom(ClassroomCreateDTO createDTO) {
-        // availableDate가 없으면 오늘 날짜를 기본값으로 설정
+        // availableDate를 과거 날짜로 설정하여 모든 날짜에 사용 가능하도록 함
+        // (필터링 로직: roomDateStr <= selectedDateStr이므로 과거 날짜를 사용)
         if (createDTO.getAvailableDate() == null) {
-            createDTO.setAvailableDate(LocalDate.now());
+            createDTO.setAvailableDate(LocalDate.of(1900, 1, 1)); // 모든 날짜에 사용 가능하도록 과거 날짜 설정
         }
         Classroom classroom = createDTO.toEntity();
         Classroom savedClassroom = classroomRepository.save(classroom);

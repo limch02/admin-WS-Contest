@@ -79,8 +79,8 @@ public class ReservationService {
                 ).boxed())
                 .collect(Collectors.toList());
         
-        // 6시부터 22시까지 중 예약되지 않은 시간대 반환
-        return IntStream.rangeClosed(6, 22)
+        // 6시부터 21시까지 중 예약되지 않은 시간대 반환 (22시는 선택 불가)
+        return IntStream.rangeClosed(6, 21)
                 .filter(hour -> !reservedHours.contains(hour))
                 .boxed()
                 .collect(Collectors.toList());

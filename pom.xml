@@ -8,7 +8,7 @@
         <version>3.5.7</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com</groupId>
+    <groupId>com.admincontest</groupId>
     <artifactId>adminContest</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>adminContest</name>

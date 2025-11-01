@@ -47,4 +47,10 @@ public class UserController {
     public String admin() {
         return "admin";
     }
+    
+    // 강의실 검색 페이지
+    @GetMapping("/search")
+    public String search() {
+        return "search";
+    }
 }

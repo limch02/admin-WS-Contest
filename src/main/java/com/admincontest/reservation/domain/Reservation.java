@@ -52,7 +52,7 @@ public class Reservation {
         this.status = status != null ? status : "ACTIVE";
     }
 
-    public static Reservation of(LocalDateTime reservationStartedAt, LocalDateTime reservationEndedAt, 
+    public static Reservation of(LocalDateTime reservationStartedAt, LocalDateTime reservationEndedAt,
                                  Classroom room, User user) {
         return Reservation.builder()
                 .reservationStartedAt(reservationStartedAt)

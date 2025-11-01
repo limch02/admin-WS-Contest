@@ -58,6 +58,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/users/search",
                                 "/api/classrooms",
+                                "/api/reservations/room/**",
                                 "/",
                                 "/css/**",
                                 "/js/**",
@@ -75,8 +76,11 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
 
-                        // ADMIN만 접근 가능 (API만 보호, 페이지는 프론트엔드에서 토큰 확인)
+                        // ADMIN만 접근 가능
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        
+                        // 예약 API는 인증 필요
+                        .requestMatchers("/api/reservations/**").authenticated()
 
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()

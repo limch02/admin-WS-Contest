@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -20,6 +21,10 @@ public class ClassroomService {
 
     @Transactional
     public Long createClassroom(ClassroomCreateDTO createDTO) {
+        // availableDate가 없으면 오늘 날짜를 기본값으로 설정
+        if (createDTO.getAvailableDate() == null) {
+            createDTO.setAvailableDate(LocalDate.now());
+        }
         Classroom classroom = createDTO.toEntity();
         Classroom savedClassroom = classroomRepository.save(classroom);
         return savedClassroom.getId();
@@ -37,13 +42,18 @@ public class ClassroomService {
     @Transactional
     public void updateClassroom(Long id, ClassroomUpdateDTO updateDTO) {
         Classroom classroom = findClassroom(id);
+        // availableDate가 없으면 기존 날짜 유지
+        LocalDate availableDate = updateDTO.getAvailableDate();
+        if (availableDate == null) {
+            availableDate = classroom.getAvailableDate();
+        }
         classroom.update(
                 updateDTO.getName(),
                 updateDTO.getLocation(),
                 updateDTO.getCapacity(),
                 updateDTO.isHasWhiteboard(),
                 updateDTO.isHasProjector(),
-                updateDTO.getAvailableDate()
+                availableDate
         );
     }
 

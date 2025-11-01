@@ -3,6 +3,7 @@ package com.admincontest.user.controller;
 import com.admincontest.user.dto.LoginRequest;
 import com.admincontest.user.dto.RegisterRequest;
 import com.admincontest.user.dto.JwtResponse;
+import com.admincontest.user.repository.UserRepository;
 import com.admincontest.user.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     // 회원가입
     @PostMapping("/register")
@@ -63,12 +65,17 @@ public class AuthController {
 
             String loginId = authentication.getName();
 
-            // 사용자 정보를 Map으로 구성 (또는 User DTO 사용)
-            Map<String, String> userInfo = new HashMap<>();
-            userInfo.put("loginId", loginId);
-            // 추가 정보는 필요시 UserRepository에서 조회
-
-            return ResponseEntity.ok(userInfo);
+            // DB에서 사용자 정보 조회
+            return userRepository.findByLoginId(loginId)
+                    .map(user -> {
+                        Map<String, String> userInfo = new HashMap<>();
+                        userInfo.put("loginId", user.getLoginId());
+                        userInfo.put("name", user.getName());
+                        userInfo.put("email", user.getEmail());
+                        userInfo.put("role", user.getRole().name());
+                        return ResponseEntity.ok(userInfo);
+                    })
+                    .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

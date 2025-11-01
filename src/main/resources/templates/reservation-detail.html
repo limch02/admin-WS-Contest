@@ -261,7 +261,14 @@
     }
     
     // 예약 완료
-    function completeReservation() {
+    async function completeReservation() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return;
+        }
+        
         const meetingName = document.getElementById('meeting-name').value.trim();
         const meetingNote = document.getElementById('meeting-note').value.trim();
         const totalPeople = registeredMembers.length + 1;
@@ -271,39 +278,73 @@
             return;
         }
 
+        // 로그인한 사용자 정보 가져오기
+        let representativeId;
+        let representativeName;
+        try {
+            const userResponse = await fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (userResponse.ok) {
+                const userInfo = await userResponse.json();
+                representativeId = userInfo.loginId;
+                // 이름은 추가 API 호출 필요하거나, 현재 정보에서 가져오기
+                representativeName = userInfo.name || representativeId;
+            } else {
+                alert('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+                window.location.href = '/login';
+                return;
+            }
+        } catch (error) {
+            console.error('사용자 정보 가져오기 실패:', error);
+            alert('사용자 정보를 가져오는 중 오류가 발생했습니다.');
+            return;
+        }
+
         // 예약 정보 구성
         const reservationData = {
-            id: Date.now(),
-            date: selectedDate,
             roomId: roomId,
-            roomName: roomName,
+            date: selectedDate,
             startHour: selectedHour,
-            duration: selectedDuration,
             endHour: selectedHour + selectedDuration,
-            meetingName: meetingName,
-            meetingNote: meetingNote,
-            mainBooker: '홍길동', // TODO: 실제로는 로그인한 사용자 정보 사용
-            members: registeredMembers,
-            totalPeople: totalPeople,
-            status: 'confirmed'
+            representativeId: representativeId,
+            representativeName: representativeName,
+            members: registeredMembers.map(m => ({
+                studentId: m.studentId,
+                studentName: m.studentName
+            }))
         };
         
-        // localStorage에 예약 저장
-        const reservations = JSON.parse(localStorage.getItem('reservations')) || [];
-        reservations.push(reservationData);
-        localStorage.setItem('reservations', JSON.stringify(reservations));
-        
-        // 프론트엔드 시뮬레이션 (서버 호출 없음)
-        alert(`예약이 완료되었습니다!\n\n등록된 모든 인원(${totalPeople}명)에게 알림이 발송되었습니다.\n\n날짜: ${selectedDate}\n강의실: ${roomName}\n시간: ${String(selectedHour).padStart(2, '0')}:00 ~ ${String(selectedHour + selectedDuration).padStart(2, '0')}:00\n참여 인원: ${totalPeople}명`);
-        
-        // 예약 완료 후 대기 순위 확인 (다른 사용자가 대기 중일 수 있음)
-        // 실제로는 서버에서 처리
-        checkWaitlistAfterReservation(roomId, selectedDate, selectedHour);
-        
-        // 예약 완료 후 마이페이지로 이동
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 1000);
+        try {
+            // 실제 예약 API 호출
+            const response = await fetch('/api/reservations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(reservationData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(`예약이 완료되었습니다!\n\n등록된 모든 인원(${totalPeople}명)에게 알림이 발송되었습니다.\n\n날짜: ${selectedDate}\n강의실: ${roomName}\n시간: ${String(selectedHour).padStart(2, '0')}:00 ~ ${String(selectedHour + selectedDuration).padStart(2, '0')}:00\n참여 인원: ${totalPeople}명`);
+                
+                // 예약 완료 후 홈으로 이동
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                alert(data.error || '예약 생성에 실패했습니다. 다시 시도해주세요.');
+            }
+        } catch (error) {
+            console.error('예약 생성 오류:', error);
+            alert('예약 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
     }
     
     // 예약 완료 후 대기 순위 확인 (다른 페이지에서 예약이 생성되었을 때)
@@ -375,11 +416,51 @@
         }
     }
     
+    // 로그인 상태 확인 및 리다이렉트
+    async function checkAuthAndRedirect() {
+        const token = localStorage.getItem('token');
+        if (!token || token.trim() === '' || token === 'null' || token === 'undefined') {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return false;
+        }
+        
+        try {
+            const response = await fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('loginId');
+                localStorage.removeItem('role');
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('인증 확인 오류:', error);
+            localStorage.removeItem('token');
+            localStorage.removeItem('loginId');
+            localStorage.removeItem('role');
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+            return false;
+        }
+    }
+    
     // 페이지 로드 시 로그인 상태 확인 및 대표 예약자 정보 업데이트
-    document.addEventListener('DOMContentLoaded', function() {
-        checkLoginStatus();
-        updateMainBookingUser();
-        updateMembersList();
+    document.addEventListener('DOMContentLoaded', async function() {
+        const isAuthenticated = await checkAuthAndRedirect();
+        if (isAuthenticated) {
+            checkLoginStatus();
+            updateMainBookingUser();
+            updateMembersList();
+        }
     });
 </script>
 </body>

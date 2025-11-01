@@ -67,7 +67,7 @@
         document.getElementById('selected-date-display').textContent = `선택된 날짜: ${formattedDate}`;
     }
     
-    // 강의실 목록 (임시 데이터)
+    // 강의실 목록 (하드코딩된 데이터)
     const classrooms = [
         { id: 1, name: '[1F] 그룹스터디 01', capacity: 10, minPeople: 7, floor: '1F' },
         { id: 2, name: '[1F] 그룹스터디 02', capacity: 10, minPeople: 7, floor: '1F' },
@@ -78,29 +78,47 @@
         { id: 7, name: '[2F] 강의실 B', capacity: 25, minPeople: 8, floor: '2F' }
     ];
     
+    // 강의실 목록 로드 (프론트엔드 시뮬레이션)
+    function loadClassrooms() {
+        renderRooms();
+    }
+    
+    // 강의실별 예약 가능한 시간대 (모든 시간대를 사용 가능하다고 가정)
+    function getAvailableTimes(roomId) {
+        // 모든 시간대를 사용 가능하다고 반환
+        const allTimes = [];
+        for (let hour = 6; hour <= 22; hour++) {
+            allTimes.push(hour);
+        }
+        return Promise.resolve(allTimes);
+    }
+    
     // 시간대 생성 (06시 ~ 22시, 정시 단위)
-    function generateTimeSlots() {
+    function generateTimeSlots(availableHours) {
         const slots = [];
         for (let hour = 6; hour <= 22; hour++) {
+            const isAvailable = availableHours.includes(hour);
             slots.push({
                 hour: hour,
                 display: String(hour).padStart(2, '0'),
-                available: true // 실제로는 예약 현황에 따라 결정
+                available: isAvailable
             });
         }
         return slots;
     }
     
     // 강의실 목록 렌더링
-    function renderRooms() {
+    async function renderRooms() {
         const roomsList = document.getElementById('rooms-list');
         roomsList.innerHTML = '';
         
-        classrooms.forEach(classroom => {
+        for (const classroom of classrooms) {
+            const availableHours = await getAvailableTimes(classroom.id);
+            const timeSlots = generateTimeSlots(availableHours);
+            
             const roomCard = document.createElement('div');
             roomCard.className = 'room-card';
             
-            const timeSlots = generateTimeSlots();
             const timeSlotsHTML = timeSlots.map(slot => {
                 return `
                     <button class="time-slot ${slot.available ? 'available' : 'unavailable'}" 
@@ -125,14 +143,22 @@
             `;
             
             roomsList.appendChild(roomCard);
-        });
+        }
     }
     
     // 시간 선택 시 예약 상세 화면으로 이동
     function selectTime(roomId, selectedHour, date) {
         const room = classrooms.find(r => r.id === roomId);
         if (room && date) {
-            window.location.href = `reservation-detail.html?date=${date}&roomId=${roomId}&hour=${selectedHour}&roomName=${encodeURIComponent(room.name)}&capacity=${room.capacity}&minPeople=${room.minPeople}`;
+            const params = new URLSearchParams({
+                date: date,
+                roomId: roomId,
+                hour: selectedHour,
+                roomName: room.name,
+                capacity: room.capacity,
+                minPeople: room.minPeople
+            });
+            window.location.href = `reservation-detail.html?${params.toString()}`;
         }
     }
     
@@ -155,10 +181,8 @@
     }
     
     // 페이지 로드 시 강의실 목록 렌더링
-    renderRooms();
-    
-    // 페이지 로드 후 설명 모달 자동 표시
-    window.addEventListener('load', function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        loadClassrooms();
         setTimeout(() => {
             openInfoModal();
         }, 500);

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>강의실 등록 | 관리자</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+    <h1>관리자 페이지</h1>
+    <nav>
+        <a href="/admin/classrooms">강의실 목록</a>
+        <a href="/admin/dashboard">대시보드</a>
+        <a href="/logout">로그아웃</a>
+    </nav>
+</header>
+
+<main class="admin-main">
+    <section class="admin-section">
+        <div class="section-header">
+            <h2>강의실 등록</h2>
+            <a href="/admin/classrooms" class="add-room-btn">목록으로</a>
+        </div>
+
+        <form th:action="@{/admin/classrooms}" th:object="${classroomForm}" method="post" class="admin-form">
+            <div class="form-group">
+                <label for="name">강의실 이름</label>
+                <input type="text" id="name" th:field="*{name}" placeholder="예: 공학관 301호" required>
+            </div>
+
+            <div class="form-group">
+                <label for="location">위치</label>
+                <input type="text" id="location" th:field="*{location}" placeholder="예: 본관 3층" required>
+            </div>
+
+            <div class="form-group">
+                <label for="capacity">수용 인원</label>
+                <input type="number" id="capacity" th:field="*{capacity}" min="1" placeholder="예: 30" required>
+            </div>
+
+            <div class="equipment-checkboxes">
+                <label class="checkbox-label">
+                    <input type="checkbox" th:field="*{hasWhiteboard}"> 화이트보드 있음
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" th:field="*{hasProjector}"> 프로젝터 있음
+                </label>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 30px;">
+                <button type="reset" class="cancel-modal-btn">초기화</button>
+                <button type="submit" class="submit-modal-btn">등록하기</button>
+            </div>
+        </form>
+    </section>
+</main>
+
+<footer>
+    © 2025 Classroom Reservation Admin
+</footer>
+</body>
+</html>

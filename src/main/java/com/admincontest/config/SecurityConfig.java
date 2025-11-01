@@ -1,70 +1,93 @@
 package com.admincontest.config;
 
+import com.admincontest.security.jwt.JwtAuthenticationFilter;
+import com.admincontest.user.service.CustomUserDetailsService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                new AntPathRequestMatcher("/"),
-                                new AntPathRequestMatcher("/css/**"),
-                                new AntPathRequestMatcher("/js/**"),
-                                new AntPathRequestMatcher("/images/**"),
-                                new AntPathRequestMatcher("/login"),
-                                new AntPathRequestMatcher("/h2-console/**"),
-                                new AntPathRequestMatcher("/style.css")
-                        ).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/admin/**"), new AntPathRequestMatcher("/api/**")).hasRole("ADMIN")
-                        .anyRequest().authenticated()
-                )
-                .formLogin(formLogin -> formLogin
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/admin/classrooms/new", true)
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                        .logoutSuccessUrl("/")
-                        .invalidateHttpSession(true)
-                        .permitAll()
-                )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/**"), new AntPathRequestMatcher("/h2-console/**"))
-                )
-                .headers(headers -> headers.frameOptions().disable()) // H2 Console
-                .httpBasic();
-
-        return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails admin = User.builder()
-                .username("test")
-                .password(passwordEncoder().encode("1234"))
-                .roles("ADMIN")
-                .build();
-        return new InMemoryUserDetailsManager(admin);
-    }
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(authProvider);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                // JWT 사용 시 세션 비활성화
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // JWT 필터 추가 (UsernamePasswordAuthenticationFilter 앞에)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                .authorizeHttpRequests(authorize -> authorize
+                        // 공개 접근 허용 (문자열 직접 사용)
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/style.css",
+                                "/register",
+                                "/login",
+                                "/h2-console/**"
+                        ).permitAll()
+
+                        // ADMIN만 접근 가능
+                        .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+
+                        // 나머지는 인증 필요
+                        .anyRequest().authenticated()
+                )
+
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**", "/h2-console/**")
+                )
+
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"error\":\"인증이 필요합니다.\"}");
+                        })
+                )
+
+                .headers(headers -> headers.frameOptions().sameOrigin()  // H2 Console 사용을 위해
+                );
+
+        return http.build();
     }
 }

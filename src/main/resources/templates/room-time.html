@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>강의실 및 시간 선택 | CNU Room</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+<header>
+    <div><b>📚 CNU Room</b></div>
+    <nav>
+        <a href="index.html">홈</a>
+        <a href="reserve.html">예약하기</a>
+        <a href="mypage.html">마이페이지</a>
+    </nav>
+</header>
+
+<main class="room-time-main">
+    <div class="room-time-container">
+        <h2>강의실 및 시간 선택</h2>
+        <div class="selected-date-info">
+            <p id="selected-date-display"></p>
+        </div>
+        
+        <div class="rooms-list" id="rooms-list">
+            <!-- 강의실 목록이 동적으로 생성됩니다 -->
+        </div>
+    </div>
+</main>
+
+<!-- 설명 모달 -->
+<div id="info-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>예약 안내</h3>
+        <div class="info-content">
+            <h4>이용 규칙</h4>
+            <ul>
+                <li>예약은 현재 날짜 기준 최대 6일까지 가능합니다.</li>
+                <li>예약 시간은 1시간 또는 2시간 단위로 선택할 수 있습니다.</li>
+                <li>최소 인원 이상 등록해야 예약이 완료됩니다.</li>
+                <li>예약 완료 후 등록된 모든 인원에게 알림이 발송됩니다.</li>
+            </ul>
+            <h4>주의사항</h4>
+            <ul>
+                <li>예약 시간 10분 전까지는 취소 가능합니다.</li>
+                <li>예약 시간을 지키지 않으면 예약이 취소될 수 있습니다.</li>
+                <li>시설 사용 후 깨끗이 정리해주세요.</li>
+            </ul>
+        </div>
+        <button class="modal-close-btn" onclick="closeInfoModal()">확인</button>
+    </div>
+</div>
+
+<footer>© 2025 CNU Room Reservation System</footer>
+
+<script>
+    // URL에서 날짜 파라미터 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedDate = urlParams.get('date') || '';
+    
+    // 선택된 날짜 표시
+    if (selectedDate) {
+        const dateObj = new Date(selectedDate + 'T00:00:00');
+        const formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+        document.getElementById('selected-date-display').textContent = `선택된 날짜: ${formattedDate}`;
+    }
+    
+    // 강의실 목록 (임시 데이터)
+    const classrooms = [
+        { id: 1, name: '[1F] 그룹스터디 01', capacity: 10, minPeople: 7, floor: '1F' },
+        { id: 2, name: '[1F] 그룹스터디 02', capacity: 10, minPeople: 7, floor: '1F' },
+        { id: 3, name: '[1F] 그룹스터디 03', capacity: 10, minPeople: 7, floor: '1F' },
+        { id: 4, name: '[1F] 그룹스터디 04', capacity: 10, minPeople: 7, floor: '1F' },
+        { id: 5, name: '[1F] 그룹스터디 05', capacity: 6, minPeople: 4, floor: '1F' },
+        { id: 6, name: '[2F] 강의실 A', capacity: 30, minPeople: 10, floor: '2F' },
+        { id: 7, name: '[2F] 강의실 B', capacity: 25, minPeople: 8, floor: '2F' }
+    ];
+    
+    // 시간대 생성 (06시 ~ 22시, 정시 단위)
+    function generateTimeSlots() {
+        const slots = [];
+        for (let hour = 6; hour <= 22; hour++) {
+            slots.push({
+                hour: hour,
+                display: String(hour).padStart(2, '0'),
+                available: true // 실제로는 예약 현황에 따라 결정
+            });
+        }
+        return slots;
+    }
+    
+    // 강의실 목록 렌더링
+    function renderRooms() {
+        const roomsList = document.getElementById('rooms-list');
+        roomsList.innerHTML = '';
+        
+        classrooms.forEach(classroom => {
+            const roomCard = document.createElement('div');
+            roomCard.className = 'room-card';
+            
+            const timeSlots = generateTimeSlots();
+            const timeSlotsHTML = timeSlots.map(slot => {
+                return `
+                    <button class="time-slot ${slot.available ? 'available' : 'unavailable'}" 
+                            onclick="selectTime(${classroom.id}, ${slot.hour}, '${selectedDate}')"
+                            ${!slot.available ? 'disabled' : ''}>
+                        ${slot.display}
+                    </button>
+                `;
+            }).join('');
+            
+            roomCard.innerHTML = `
+                <div class="room-header">
+                    <h3>${classroom.name}</h3>
+                    <div class="room-capacity">
+                        <span>정원: ${classroom.capacity}명</span>
+                        <span>최소인원: ${classroom.minPeople}명</span>
+                    </div>
+                </div>
+                <div class="time-slots-grid">
+                    ${timeSlotsHTML}
+                </div>
+            `;
+            
+            roomsList.appendChild(roomCard);
+        });
+    }
+    
+    // 시간 선택 시 예약 상세 화면으로 이동
+    function selectTime(roomId, selectedHour, date) {
+        const room = classrooms.find(r => r.id === roomId);
+        if (room && date) {
+            window.location.href = `reservation-detail.html?date=${date}&roomId=${roomId}&hour=${selectedHour}&roomName=${encodeURIComponent(room.name)}&capacity=${room.capacity}&minPeople=${room.minPeople}`;
+        }
+    }
+    
+    // 설명 모달 열기
+    function openInfoModal() {
+        document.getElementById('info-modal').style.display = 'block';
+    }
+    
+    // 설명 모달 닫기
+    function closeInfoModal() {
+        document.getElementById('info-modal').style.display = 'none';
+    }
+    
+    // 모달 닫기 버튼 이벤트
+    window.onclick = function(event) {
+        const modal = document.getElementById('info-modal');
+        if (event.target === modal || event.target.classList.contains('close')) {
+            closeInfoModal();
+        }
+    }
+    
+    // 페이지 로드 시 강의실 목록 렌더링
+    renderRooms();
+    
+    // 페이지 로드 후 설명 모달 자동 표시
+    window.addEventListener('load', function() {
+        setTimeout(() => {
+            openInfoModal();
+        }, 500);
+    });
+</script>
+</body>
+</html>

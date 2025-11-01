@@ -2,8 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>강의실 예약 | CNU Room</title>
-    <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
 <header>
@@ -15,30 +16,127 @@
     </nav>
 </header>
 
-<form>
-    <h2>강의실 검색</h2>
-    <label>날짜</label><input type="date">
-    <label>시간</label>
-    <select>
-        <option>14:00~15:00</option>
-        <option>15:00~16:00</option>
-        <option>16:00~17:00</option>
-    </select>
-    <label>최소 수용인원</label><input type="number" placeholder="예: 10">
-    <label>비품</label>
-    <select>
-        <option>전체</option>
-        <option>프로젝터</option>
-        <option>화이트보드</option>
-    </select>
-    <button type="submit">검색</button>
-</form>
-
-<table>
-    <tr><th>강의실</th><th>위치</th><th>수용인원</th><th>비품</th><th>예약</th></tr>
-    <tr><td>공학관 301호</td><td>본관 3층</td><td>30명</td><td>프로젝터</td><td><button>예약</button></td></tr>
-</table>
+<main class="reservation-main">
+    <div class="calendar-container">
+        <h2>예약 날짜 선택</h2>
+        <div class="calendar-header">
+            <span id="current-month-year"></span>
+        </div>
+        <div class="calendar-info">
+            <p>현재 날짜 기준 6일까지 예약 가능합니다.</p>
+        </div>
+        <div class="calendar">
+            <div class="calendar-weekdays">
+                <div class="weekday">일</div>
+                <div class="weekday">월</div>
+                <div class="weekday">화</div>
+                <div class="weekday">수</div>
+                <div class="weekday">목</div>
+                <div class="weekday">금</div>
+                <div class="weekday">토</div>
+            </div>
+            <div class="calendar-days" id="calendar-days">
+                <!-- 달력 날짜가 동적으로 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+</main>
 
 <footer>© 2025 CNU Room Reservation System</footer>
+
+<script>
+    // 현재 날짜 가져오기
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    const currentDate = today.getDate();
+    
+    // 최대 예약 가능 날짜 (현재 날짜 + 6일)
+    const maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + 6);
+    
+    // 달력 초기화
+    function initCalendar() {
+        const monthYearElement = document.getElementById('current-month-year');
+        monthYearElement.textContent = `${currentYear}년 ${currentMonth + 1}월`;
+        
+        const calendarDays = document.getElementById('calendar-days');
+        calendarDays.innerHTML = '';
+        
+        // 해당 월의 첫 번째 날
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const firstDayOfWeek = firstDay.getDay();
+        
+        // 이전 달의 마지막 날들
+        const prevMonthLastDate = new Date(currentYear, currentMonth, 0).getDate();
+        
+        // 이전 달 날짜들 추가
+        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+            const date = prevMonthLastDate - i;
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day other-month';
+            dayElement.textContent = date;
+            calendarDays.appendChild(dayElement);
+        }
+        
+        // 해당 월의 날짜들
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+        for (let date = 1; date <= lastDate; date++) {
+            const dayElement = document.createElement('div');
+            const dateObj = new Date(currentYear, currentMonth, date);
+            const dayOfWeek = dateObj.getDay();
+            
+            // 현재 날짜와 비교하여 예약 가능 여부 확인
+            const isPastDate = dateObj < today;
+            const isFutureDate = dateObj > maxDate;
+            const isToday = date === currentDate && currentMonth === today.getMonth();
+            
+            dayElement.className = 'calendar-day';
+            
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                dayElement.classList.add('weekend');
+            }
+            
+            if (isPastDate || isFutureDate) {
+                dayElement.classList.add('disabled');
+                dayElement.textContent = date;
+            } else {
+                dayElement.classList.add('available');
+                dayElement.innerHTML = `
+                    <span class="date-number">${date}</span>
+                    <button class="add-btn" onclick="goToRoomSelection('${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}')">
+                        <span class="add-icon">+</span>
+                    </button>
+                `;
+            }
+            
+            if (isToday) {
+                dayElement.classList.add('today');
+            }
+            
+            calendarDays.appendChild(dayElement);
+        }
+        
+        // 다음 달 날짜들로 채우기 (42일 표시를 위해)
+        const totalCells = calendarDays.children.length;
+        const remainingCells = 42 - totalCells;
+        for (let date = 1; date <= remainingCells; date++) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day other-month';
+            dayElement.textContent = date;
+            calendarDays.appendChild(dayElement);
+        }
+    }
+    
+    // 강의실 선택 화면으로 이동
+    function goToRoomSelection(selectedDate) {
+        window.location.href = `room-time.html?date=${selectedDate}`;
+    }
+    
+    // 페이지 로드 시 달력 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        initCalendar();
+    });
+</script>
 </body>
 </html>

@@ -92,4 +92,16 @@ public class AuthController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+
+    // 사용자의 활성화된 미래 예약 개수 조회
+    @GetMapping("/users/{loginId}/reservation-count")
+    public ResponseEntity<?> getUserReservationCount(@PathVariable String loginId) {
+        try {
+            return authService.getUserReservationCount(loginId);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
 }

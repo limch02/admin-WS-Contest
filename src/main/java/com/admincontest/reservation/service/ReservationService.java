@@ -36,6 +36,37 @@ public class ReservationService {
         LocalDateTime startDateTime = date.atTime(request.getStartHour(), 0);
         LocalDateTime endDateTime = date.atTime(request.getEndHour(), 0);
         
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 강의실 정원 체크 (대표 예약자 1명 + 멤버 수)
+        int totalParticipants = 1 + (request.getMembers() != null ? request.getMembers().size() : 0);
+        if (totalParticipants > classroom.getCapacity()) {
+            throw new IllegalArgumentException("강의실 정원(" + classroom.getCapacity() + "명)을 초과했습니다. 현재 참여 인원: " + totalParticipants + "명");
+        }
+        
+        // 대표 예약자의 활성화된 미래 예약 개수 제한 (최대 3개)
+        List<Reservation> representativeReservations = reservationRepository.findActiveFutureReservationsByUserId(
+                user.getUserId(), now);
+        
+        if (representativeReservations.size() >= 3) {
+            throw new IllegalArgumentException("대표 예약자의 활성화된 예약이 3개 이상입니다. 기존 예약을 취소한 후 다시 시도해주세요.");
+        }
+        
+        // 그룹 멤버들의 활성화된 미래 예약 개수 제한 체크
+        if (request.getMembers() != null && !request.getMembers().isEmpty()) {
+            for (ReservationRequest.Member member : request.getMembers()) {
+                User memberUser = userRepository.findByLoginId(member.getStudentId())
+                        .orElseThrow(() -> new IllegalArgumentException("참여자 '" + member.getStudentName() + "(" + member.getStudentId() + ")'를 찾을 수 없습니다."));
+                
+                List<Reservation> memberReservations = reservationRepository.findActiveFutureReservationsByUserId(
+                        memberUser.getUserId(), now);
+                
+                if (memberReservations.size() >= 3) {
+                    throw new IllegalArgumentException("참여자 '" + member.getStudentName() + "(" + member.getStudentId() + ")'의 활성화된 예약이 3개 이상입니다. 해당 참여자는 예약에 포함될 수 없습니다.");
+                }
+            }
+        }
+        
         // 중복 예약 체크 (같은 강의실, 같은 시간대)
         // 날짜 범위로 조회: 해당 날짜의 시작(00:00:00)부터 다음 날 시작 전까지
         LocalDateTime dateStart = date.atStartOfDay();

@@ -1,5 +1,7 @@
 package com.admincontest.user.service;
 
+import com.admincontest.reservation.domain.Reservation;
+import com.admincontest.reservation.repository.ReservationRepository;
 import com.admincontest.security.jwt.JwtTokenProvider;
 import com.admincontest.user.domain.User;
 import com.admincontest.user.domain.UserStatus;
@@ -16,7 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -27,6 +31,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final ReservationRepository reservationRepository;
 
     // 회원가입
     @Transactional
@@ -88,11 +93,39 @@ public class AuthService {
             throw new IllegalArgumentException("학생만 예약 참여자로 등록할 수 있습니다.");
         }
 
-        Map<String, String> userInfo = new HashMap<>();
+        // 사용자의 활성화된 미래 예약 개수 조회
+        LocalDateTime now = LocalDateTime.now();
+        List<Reservation> activeFutureReservations = reservationRepository.findActiveFutureReservationsByUserId(
+                user.getUserId(), now);
+        int reservationCount = activeFutureReservations.size();
+
+        Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("loginId", user.getLoginId());
         userInfo.put("name", user.getName());
         userInfo.put("email", user.getEmail());
+        userInfo.put("reservationCount", reservationCount);
+        userInfo.put("canParticipate", reservationCount < 3);
 
         return ResponseEntity.ok(userInfo);
+    }
+
+    // 사용자의 활성화된 미래 예약 개수 조회
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getUserReservationCount(String loginId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 학번의 사용자를 찾을 수 없습니다."));
+
+        LocalDateTime now = LocalDateTime.now();
+        List<Reservation> activeFutureReservations = reservationRepository.findActiveFutureReservationsByUserId(
+                user.getUserId(), now);
+        int count = activeFutureReservations.size();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("loginId", user.getLoginId());
+        response.put("name", user.getName());
+        response.put("reservationCount", count);
+        response.put("canParticipate", count < 3);
+
+        return ResponseEntity.ok(response);
     }
 }

@@ -139,8 +139,9 @@
                             roomDateStr = room.availableDate.toISOString().split('T')[0];
                         }
                         
-                        // 사용 가능 날짜가 선택된 날짜와 정확히 일치하는 경우만 표시
-                        const isAvailable = roomDateStr === selectedDateStr;
+                        // 사용 가능 날짜가 선택된 날짜 이전이거나 같은 경우 표시
+                        // (availableDate가 1900-01-01 같은 과거 날짜로 설정되면 모든 날짜에 사용 가능)
+                        const isAvailable = roomDateStr <= selectedDateStr;
                         console.log(isAvailable ? '✅' : '❌', '강의실:', room.name, '| availableDate:', roomDateStr, '| 선택 날짜:', selectedDateStr, '| 표시:', isAvailable);
                         
                         return isAvailable;
@@ -172,9 +173,9 @@
     // 강의실별 예약 가능한 시간대 (실제 DB에서 조회)
     async function getAvailableTimes(roomId) {
         if (!selectedDate) {
-            // 날짜가 없으면 모든 시간대 반환
+            // 날짜가 없으면 모든 시간대 반환 (22시 제외)
             const allTimes = [];
-            for (let hour = 6; hour <= 22; hour++) {
+            for (let hour = 6; hour <= 21; hour++) {
                 allTimes.push(hour);
             }
             return allTimes;
@@ -200,9 +201,9 @@
                     }
                 });
                 
-                // 6시부터 22시까지 중 예약되지 않은 시간대 반환
+                // 6시부터 21시까지 중 예약되지 않은 시간대 반환 (22시는 선택 불가)
                 const availableHours = [];
-                for (let hour = 6; hour <= 22; hour++) {
+                for (let hour = 6; hour <= 21; hour++) {
                     if (!reservedHours.has(hour)) {
                         availableHours.push(hour);
                     }
@@ -210,9 +211,9 @@
                 return availableHours;
             } else {
                 console.error('예약 정보 조회 실패:', response.status);
-                // 오류 발생 시 모든 시간대 반환
+                // 오류 발생 시 모든 시간대 반환 (22시 제외)
                 const allTimes = [];
-                for (let hour = 6; hour <= 22; hour++) {
+                for (let hour = 6; hour <= 21; hour++) {
                     allTimes.push(hour);
                 }
                 return allTimes;
@@ -228,10 +229,10 @@
         }
     }
     
-    // 시간대 생성 (06시 ~ 22시, 정시 단위)
+    // 시간대 생성 (06시 ~ 21시, 정시 단위) - 22시는 선택 불가
     function generateTimeSlots(availableHours) {
         const slots = [];
-        for (let hour = 6; hour <= 22; hour++) {
+        for (let hour = 6; hour <= 21; hour++) {  // 22시는 제외
             const isAvailable = availableHours.includes(hour);
             slots.push({
                 hour: hour,

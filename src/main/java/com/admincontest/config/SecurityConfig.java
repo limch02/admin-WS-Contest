@@ -57,7 +57,6 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/users/search",
-                                "/api/classrooms",
                                 "/api/reservations/room/**",
                                 "/api/waitlist/room/**",
                                 "/",
@@ -76,9 +75,16 @@ public class SecurityConfig {
                                 "/admin",
                                 "/h2-console/**"
                         ).permitAll()
+                        
+                        // GET /api/classrooms는 공개 접근 (읽기 전용)
+                        .requestMatchers("GET", "/api/classrooms").permitAll()
 
                         // ADMIN만 접근 가능
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        
+                        // 강의실 관리 API는 인증 필요 (POST, PUT, DELETE)
+                        .requestMatchers("POST", "/api/classrooms").authenticated()
+                        .requestMatchers("/api/classrooms/**").authenticated()
                         
                         // 대기 신청 API는 인증 필요
                         .requestMatchers("/api/waitlist/**").authenticated()

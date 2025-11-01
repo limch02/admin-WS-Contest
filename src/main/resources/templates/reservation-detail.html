@@ -132,9 +132,38 @@
     // 상태 변수
     let selectedDuration = 1; // 기본 1시간
     let registeredMembers = []; // 등록된 멤버 목록
+    
+    // 21시일 때 2시간 버튼 비활성화
+    function updateDurationButtons() {
+        const durationButtons = document.querySelectorAll('.duration-btn');
+        durationButtons.forEach(btn => {
+            const duration = parseInt(btn.dataset.duration);
+            if (selectedHour === 21 && duration === 2) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        });
+    }
 
     // 예약 시간 선택
     function selectDuration(duration) {
+        // 21시일 때 2시간 예약 불가
+        if (selectedHour === 21 && duration === 2) {
+            alert('21시는 2시간 예약이 불가능합니다. 1시간만 선택 가능합니다.');
+            return;
+        }
+        
+        // 22시는 선택 불가 (1시간 예약도 불가)
+        if (selectedHour >= 22) {
+            alert('22시는 예약할 수 없습니다.');
+            return;
+        }
+        
         selectedDuration = duration;
         const buttons = document.querySelectorAll('.duration-btn');
         buttons.forEach(btn => {
@@ -460,6 +489,7 @@
             checkLoginStatus();
             updateMainBookingUser();
             updateMembersList();
+            updateDurationButtons(); // 21시일 때 2시간 버튼 비활성화
         }
     });
 </script>

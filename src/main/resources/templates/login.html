@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 | CNU Room</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
@@ -14,18 +15,156 @@
     </nav>
 </header>
 
-<form>
-    <h2>로그인</h2>
-    <label>아이디</label>
-    <input type="text" placeholder="학번 또는 관리자 ID">
-    <label>비밀번호</label>
-    <input type="password" placeholder="비밀번호 입력">
-    <button type="submit">로그인</button>
-    <p style="text-align:center;margin-top:1rem;">
-        아직 계정이 없으신가요? <a href="register.html">회원가입</a>
-    </p>
-</form>
+<main class="login-main">
+    <div class="login-container">
+        <div class="login-content">
+            <h2>로그인</h2>
+            <p class="login-subtitle">강의실 예약 시스템에 오신 것을 환영합니다</p>
+            
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="username">아이디</label>
+                    <input type="text" id="username" name="username" placeholder="학번 또는 관리자 ID" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" name="password" placeholder="비밀번호 입력" required autocomplete="current-password">
+                    <div class="password-toggle">
+                        <button type="button" class="toggle-password-btn" onclick="togglePassword()">
+                            <span id="toggle-icon">👁️</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="remember-me" name="remember-me">
+                        <span>로그인 상태 유지</span>
+                    </label>
+                    <a href="#" class="forgot-password">비밀번호 찾기</a>
+                </div>
+                
+                <div id="error-message" class="error-message" style="display: none;"></div>
+                
+                <button type="submit" class="login-submit-btn" id="login-btn">
+                    <span id="login-btn-text">로그인</span>
+                    <span id="login-loading" style="display: none;">로그인 중...</span>
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>아직 계정이 없으신가요? <a href="register.html">회원가입</a></p>
+            </div>
+        </div>
+    </div>
+</main>
 
 <footer>© 2025 CNU Room Reservation System</footer>
+
+<script>
+    // 비밀번호 표시/숨기기
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggle-icon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.textContent = '🙈';
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.textContent = '👁️';
+        }
+    }
+    
+    // 에러 메시지 표시
+    function showError(message) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+    
+    // 에러 메시지 숨기기
+    function hideError() {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.style.display = 'none';
+    }
+    
+    // 로그인 폼 제출
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const rememberMe = document.getElementById('remember-me').checked;
+        
+        // 기본 검증
+        if (!username) {
+            showError('아이디를 입력해주세요.');
+            return;
+        }
+        
+        if (!password) {
+            showError('비밀번호를 입력해주세요.');
+            return;
+        }
+        
+        // 로딩 상태 표시
+        const loginBtn = document.getElementById('login-btn');
+        const loginBtnText = document.getElementById('login-btn-text');
+        const loginLoading = document.getElementById('login-loading');
+        
+        loginBtn.disabled = true;
+        loginBtnText.style.display = 'none';
+        loginLoading.style.display = 'inline';
+        hideError();
+        
+        // 프론트엔드 시뮬레이션 (서버 호출 없음)
+        setTimeout(() => {
+            // 간단한 검증 (실제로는 서버에서 처리)
+            if (username && password) {
+                // 로그인 성공 시뮬레이션
+                alert('로그인되었습니다.');
+                
+                // 사용자 정보 저장
+                localStorage.setItem('user', JSON.stringify({
+                    username: username,
+                    role: username.includes('admin') ? '관리자' : '학생'
+                }));
+                
+                // 마이페이지로 이동
+                window.location.href = 'mypage.html';
+            } else {
+                // 로그인 실패
+                showError('아이디 또는 비밀번호를 입력해주세요.');
+                loginBtn.disabled = false;
+                loginBtnText.style.display = 'inline';
+                loginLoading.style.display = 'none';
+            }
+        }, 800); // 로딩 효과를 위한 지연
+    });
+    
+    // 입력 필드에서 Enter 키 처리
+    document.getElementById('username').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('password').focus();
+        }
+    });
+    
+    document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('login-form').dispatchEvent(new Event('submit'));
+        }
+    });
+    
+    // 페이지 로드 시 저장된 아이디 불러오기
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedUsername = localStorage.getItem('savedUsername');
+        if (savedUsername) {
+            document.getElementById('username').value = savedUsername;
+            document.getElementById('remember-me').checked = true;
+        }
+    });
+</script>
 </body>
 </html>

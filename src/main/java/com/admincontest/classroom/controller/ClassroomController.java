@@ -1,9 +1,9 @@
-package com.admincontest.domain.classroom.controller;
+package com.admincontest.classroom.controller;
 
-import com.admincontest.domain.classroom.domain.Classroom;
-import com.admincontest.domain.classroom.dto.ClassroomCreateDTO;
-import com.admincontest.domain.classroom.dto.ClassroomUpdateDTO;
-import com.admincontest.domain.classroom.service.ClassroomService;
+import com.admincontest.classroom.domain.Classroom;
+import com.admincontest.classroom.dto.ClassroomCreateDTO;
+import com.admincontest.classroom.dto.ClassroomUpdateDTO;
+import com.admincontest.classroom.service.ClassroomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

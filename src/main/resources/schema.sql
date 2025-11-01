@@ -30,8 +30,8 @@ CREATE TABLE Classrooms (
     name VARCHAR(15) NOT NULL,
     location VARCHAR(50) NOT NULL,
     capacity INT NOT NULL,
-    has_whiteboard TINYINT(1) DEFAULT 0,
-    has_projector TINYINT(1) DEFAULT 0,
+    has_whiteboard BOOLEAN DEFAULT FALSE,
+    has_projector BOOLEAN DEFAULT FALSE,
     reserve_count INT DEFAULT 0
 );
 
@@ -52,10 +52,14 @@ CREATE TABLE Reservation (
 ALTER TABLE Reservation
     ADD CONSTRAINT fk_reservation_room
         FOREIGN KEY (room_id) REFERENCES Classrooms(room_id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE;
+
+ALTER TABLE Reservation
     ADD CONSTRAINT fk_reservation_user
         FOREIGN KEY (user_id) REFERENCES Users(user_id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE;
+
+ALTER TABLE Reservation
     ADD CONSTRAINT chk_reservation_time
         CHECK (reservation_started_at < reservation_ended_at);
 
@@ -72,10 +76,14 @@ CREATE TABLE Reserve_User (
 ALTER TABLE Reserve_User
     ADD CONSTRAINT fk_participant_user
         FOREIGN KEY (student_id) REFERENCES Users(user_id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE;
+
+ALTER TABLE Reserve_User
     ADD CONSTRAINT fk_participant_reservation
         FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE;
+
+ALTER TABLE Reserve_User
     ADD CONSTRAINT uk_student_reservation
         UNIQUE (student_id, reservation_id);
 
@@ -97,10 +105,14 @@ CREATE TABLE Wait_List (
 ALTER TABLE Wait_List
     ADD CONSTRAINT fk_wait_user
         FOREIGN KEY (user_id) REFERENCES Users(user_id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE;
+
+ALTER TABLE Wait_List
     ADD CONSTRAINT fk_wait_room
         FOREIGN KEY (room_id) REFERENCES Classrooms(room_id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE;
+
+ALTER TABLE Wait_List
     ADD CONSTRAINT uk_waitlist_user_room_time
         UNIQUE (user_id, room_id, reservation_started_at, reservation_ended_at);
 

@@ -73,11 +73,16 @@ public class SecurityConfig {
                                 "/reservation-detail",
                                 "/reservation-detail.html",
                                 "/admin",
+                                "/search",
+                                "/search.html",
                                 "/h2-console/**"
                         ).permitAll()
                         
                         // GET /api/classrooms는 공개 접근 (읽기 전용)
                         .requestMatchers("GET", "/api/classrooms").permitAll()
+                        
+                        // 검색 API는 공개 접근
+                        .requestMatchers("POST", "/api/classrooms/search").permitAll()
 
                         // ADMIN만 접근 가능
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

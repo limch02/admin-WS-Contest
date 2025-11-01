@@ -2,6 +2,8 @@ package com.admincontest.classroom.controller;
 
 import com.admincontest.classroom.domain.Classroom;
 import com.admincontest.classroom.dto.ClassroomCreateDTO;
+import com.admincontest.classroom.dto.ClassroomSearchRequest;
+import com.admincontest.classroom.dto.ClassroomSearchResult;
 import com.admincontest.classroom.dto.ClassroomUpdateDTO;
 import com.admincontest.classroom.service.ClassroomService;
 import lombok.RequiredArgsConstructor;
@@ -46,5 +48,14 @@ public class ClassroomController {
     public ResponseEntity<Void> deleteClassroom(@PathVariable Long id) {
         classroomService.deleteClassroom(id);
         return ResponseEntity.noContent().build();
+    }
+    
+    /**
+     * 빈 강의실 검색 (필터링 포함)
+     */
+    @PostMapping("/search")
+    public ResponseEntity<List<ClassroomSearchResult>> searchAvailableClassrooms(@RequestBody ClassroomSearchRequest request) {
+        List<ClassroomSearchResult> results = classroomService.searchAvailableClassrooms(request);
+        return ResponseEntity.ok(results);
     }
 }

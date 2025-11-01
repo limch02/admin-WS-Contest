@@ -213,12 +213,34 @@
                 // DB에 존재하는 학생인 경우
                 // 이름은 DB에서 가져온 이름 사용
                 const dbName = data.name;
+                const reservationCount = data.reservationCount || 0;
+                const canParticipate = data.canParticipate !== undefined ? data.canParticipate : true;
+                
+                // 예약 개수 체크 (3개 이상이면 참여 불가)
+                if (!canParticipate || reservationCount >= 3) {
+                    alert(`"${dbName}"님의 활성화된 예약이 3개 이상입니다.\n해당 사용자는 예약에 참여할 수 없습니다.`);
+                    return;
+                }
                 
                 // 입력한 이름이 있으면 검증 (선택사항)
                 if (studentName && studentName.trim() !== '' && studentName !== dbName) {
                     if (!confirm(`입력한 이름("${studentName}")과 등록된 이름("${dbName}")이 다릅니다.\n등록된 이름("${dbName}")으로 등록하시겠습니까?`)) {
                         return;
                     }
+                }
+                
+                // 예약 개수 경고 (2개인 경우)
+                if (reservationCount === 2) {
+                    if (!confirm(`"${dbName}"님의 현재 활성 예약이 2개입니다.\n이 예약에 참여하면 예약 가능 개수를 초과하게 됩니다.\n계속하시겠습니까?`)) {
+                        return;
+                    }
+                }
+                
+                // 정원 체크 (대표 예약자 1명 + 현재 멤버 수 + 새로 추가할 멤버 1명)
+                const totalPeople = registeredMembers.length + 1 + 1; // 대표 + 현재 멤버 + 새 멤버
+                if (totalPeople > capacity) {
+                    alert(`강의실 정원(${capacity}명)을 초과합니다.\n현재 참여 인원: ${registeredMembers.length + 1}명\n추가하려는 인원: ${totalPeople}명\n정원: ${capacity}명\n\n멤버를 추가할 수 없습니다.`);
+                    return;
                 }
                 
                 // 멤버 추가
@@ -234,7 +256,13 @@
                 document.getElementById('student-id').value = '';
                 document.getElementById('student-name').value = '';
                 
-                alert(`${dbName}님이 등록되었습니다.`);
+                // 정원에 도달했는지 확인
+                const finalTotal = registeredMembers.length + 1;
+                if (finalTotal >= capacity) {
+                    alert(`${dbName}님이 등록되었습니다.\n\n⚠️ 정원에 도달했습니다. 더 이상 멤버를 추가할 수 없습니다.`);
+                } else {
+                    alert(`${dbName}님이 등록되었습니다.`);
+                }
             } else {
                 // DB에 존재하지 않는 경우
                 alert(data.error || '해당 학번의 사용자를 찾을 수 없습니다. 먼저 회원가입을 해주세요.');
@@ -249,6 +277,9 @@
     function updateMembersList() {
         const membersList = document.getElementById('members-list');
         membersList.innerHTML = '';
+        
+        const totalPeople = registeredMembers.length + 1; // 대표 예약자 포함
+        const remainingCapacity = capacity - totalPeople;
         
         if (registeredMembers.length === 0) {
             const li = document.createElement('li');
@@ -268,6 +299,35 @@
         }
         
         document.getElementById('members-count').textContent = registeredMembers.length;
+        
+        // 정원 정보 업데이트
+        const membersCountDiv = document.querySelector('.members-count');
+        if (membersCountDiv && totalPeople >= capacity) {
+            // 정원에 도달했거나 초과한 경우 경고 메시지
+            if (totalPeople > capacity) {
+                membersCountDiv.style.color = 'red';
+                membersCountDiv.innerHTML = `
+                    <span>대표 예약자: <strong>1명</strong></span>
+                    <span>참여 인원: <strong style="color: red;">${registeredMembers.length}명</strong></span>
+                    <span style="color: red;">⚠️ 정원(${capacity}명) 초과! 현재: ${totalPeople}명</span>
+                `;
+            } else {
+                membersCountDiv.style.color = 'orange';
+                membersCountDiv.innerHTML = `
+                    <span>대표 예약자: <strong>1명</strong></span>
+                    <span>참여 인원: <strong>${registeredMembers.length}명</strong></span>
+                    <span style="color: orange;">⚠️ 정원(${capacity}명)에 도달했습니다</span>
+                `;
+            }
+        } else {
+            membersCountDiv.style.color = '';
+            membersCountDiv.innerHTML = `
+                <span>대표 예약자: <strong>1명</strong></span>
+                <span>참여 인원: <strong>${registeredMembers.length}명</strong></span>
+                <span>정원: <strong>${capacity}명</strong> (남은 인원: ${remainingCapacity}명)</span>
+            `;
+        }
+        
         updateReserveButton();
     }
     
@@ -283,10 +343,21 @@
     function updateReserveButton() {
         const totalPeople = registeredMembers.length + 1; // 대표 예약자 포함
         const reserveBtn = document.getElementById('reserve-btn');
-
-        reserveBtn.disabled = false;
-        reserveBtn.classList.add('enabled');
-
+        
+        // 정원 초과 시 예약 버튼 비활성화
+        if (totalPeople > capacity) {
+            reserveBtn.disabled = true;
+            reserveBtn.classList.remove('enabled');
+            reserveBtn.title = `정원(${capacity}명)을 초과했습니다. 현재 인원: ${totalPeople}명`;
+        } else if (totalPeople === 0) {
+            reserveBtn.disabled = true;
+            reserveBtn.classList.remove('enabled');
+            reserveBtn.title = '최소 1명 이상 필요합니다.';
+        } else {
+            reserveBtn.disabled = false;
+            reserveBtn.classList.add('enabled');
+            reserveBtn.title = '';
+        }
     }
     
     // 예약 완료
@@ -304,6 +375,17 @@
         
         if (!meetingName) {
             alert('모임명을 입력해주세요.');
+            return;
+        }
+        
+        // 정원 최종 체크
+        if (totalPeople > capacity) {
+            alert(`강의실 정원(${capacity}명)을 초과했습니다.\n현재 참여 인원: ${totalPeople}명\n\n일부 멤버를 제거한 후 다시 시도해주세요.`);
+            return;
+        }
+        
+        if (totalPeople < 1) {
+            alert('최소 1명 이상 필요합니다.');
             return;
         }
 

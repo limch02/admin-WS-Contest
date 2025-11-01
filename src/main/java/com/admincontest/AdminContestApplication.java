@@ -10,5 +10,4 @@ public class AdminContestApplication {
 		SpringApplication.run(AdminContestApplication.class, args);
 	}
 
-
 }

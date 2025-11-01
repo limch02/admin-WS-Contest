@@ -3311,3 +3311,6 @@ select c1_0.room_id,c1_0.available_date,c1_0.capacity,c1_0.has_projector,c1_0.ha
 	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:491)
 	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
 	at java.base/java.lang.Thread.run(Thread.java:1583)
+2025-11-02 05:15:26.863012+09:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "RESERVATIONS" not found; SQL statement:
+select * from reservations [42102-232]

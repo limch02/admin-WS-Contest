@@ -37,6 +37,7 @@
                         <th>위치</th>
                         <th>날짜</th>
                         <th>시간</th>
+                        <th>역할</th>
                         <th>상태</th>
                         <th>작업</th>
                     </tr>
@@ -241,14 +242,21 @@
                 statusBadge = '<span class="status-badge cancelled">취소됨</span>';
             }
             
+            // 본인이 예약한 것인지 참여한 것인지 표시
+            const roleBadge = reservation.isOwner ? 
+                '<span class="role-badge owner" style="background-color: #4CAF50; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">예약자</span>' : 
+                '<span class="role-badge participant" style="background-color: #2196F3; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">참여자</span>';
+            
             let cancelButton = '';
             if (reservation.canCancel) {
                 cancelButton = `<button class="cancel-reservation-btn" onclick="cancelReservation(${reservation.reservationId})">취소</button>`;
             } else {
                 if (reservation.status === 'CANCELLED') {
                     cancelButton = '<span style="color: #999;">이미 취소됨</span>';
-                } else {
+                } else if (reservation.isOwner) {
                     cancelButton = '<span style="color: #999;">취소 불가</span>';
+                } else {
+                    cancelButton = '<span style="color: #999;">참여자는 취소 불가</span>';
                 }
             }
             
@@ -257,6 +265,7 @@
                 <td>${reservation.location}</td>
                 <td>${formattedDate}</td>
                 <td>${timeRange}</td>
+                <td>${roleBadge}</td>
                 <td>${statusBadge}</td>
                 <td>${cancelButton}</td>
             `;

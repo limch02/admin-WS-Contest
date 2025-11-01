@@ -11,9 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -71,5 +75,24 @@ public class AuthService {
 
         // JWT 응답 객체 생성 및 반환
         return new JwtResponse(token, user.getLoginId(), user.getRole().name());
+    }
+
+    // 학번으로 사용자 검색 (예약 참여자 등록용)
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> findUserByLoginId(String loginId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 학번의 사용자를 찾을 수 없습니다."));
+
+        // 학생(STUDENT)만 등록 가능
+        if (user.getRole() != UserStatus.STUDENT) {
+            throw new IllegalArgumentException("학생만 예약 참여자로 등록할 수 있습니다.");
+        }
+
+        Map<String, String> userInfo = new HashMap<>();
+        userInfo.put("loginId", user.getLoginId());
+        userInfo.put("name", user.getName());
+        userInfo.put("email", user.getEmail());
+
+        return ResponseEntity.ok(userInfo);
     }
 }

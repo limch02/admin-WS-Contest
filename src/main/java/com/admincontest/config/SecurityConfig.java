@@ -56,6 +56,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
+                                "/api/auth/users/search",
+                                "/api/classrooms",
                                 "/",
                                 "/css/**",
                                 "/js/**",
@@ -65,6 +67,10 @@ public class SecurityConfig {
                                 "/login",
                                 "/reserve",
                                 "/reserve.html",
+                                "/room-time",
+                                "/room-time.html",
+                                "/reservation-detail",
+                                "/reservation-detail.html",
                                 "/admin",
                                 "/h2-console/**"
                         ).permitAll()

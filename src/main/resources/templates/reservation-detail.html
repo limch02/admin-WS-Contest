@@ -4,15 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>예약 상세 정보 | CNU Room</title>
-    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header>
     <div><b>📚 CNU Room</b></div>
     <nav>
-        <a href="index.html">홈</a>
-        <a href="reserve.html">예약하기</a>
-        <a href="mypage.html">마이페이지</a>
+        <a href="/">홈</a>
+        <a href="/reserve">예약하기</a>
+        <a href="/login" id="login-link">로그인</a>
+        <a href="#" id="mypage-link" style="display: none;">마이페이지</a>
+        <a href="#" id="logout-link" onclick="logout()" style="display: none;">로그아웃</a>
     </nav>
 </header>
 
@@ -67,12 +69,12 @@
             <div class="add-member-form">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="student-id">이용자 번호(학번)</label>
-                        <input type="text" id="student-id" placeholder="학번을 입력하세요">
+                        <label for="student-id">이용자 번호(학번) *</label>
+                        <input type="text" id="student-id" placeholder="학번을 입력하세요" required>
                     </div>
                     <div class="form-group">
-                        <label for="student-name">이용자 이름</label>
-                        <input type="text" id="student-name" placeholder="이름을 입력하세요">
+                        <label for="student-name">이용자 이름 (선택사항)</label>
+                        <input type="text" id="student-name" placeholder="이름을 입력하면 검증합니다 (선택사항)">
                     </div>
                 </div>
                 <button class="register-btn" onclick="registerMember()">이용자 등록</button>
@@ -82,8 +84,8 @@
             <div class="members-list">
                 <h4>등록된 참여 인원</h4>
                 <div class="members-count">
-                    <span>대표 예약자: <strong id="main-booking-user">홍길동</strong></span>
-                    <span>참여 인원: <strong id="members-count">1</strong>명</span>
+                    <span>대표 예약자: <strong id="main-booking-user">-</strong></span>
+                    <span>참여 인원: <strong id="members-count">0</strong>명</span>
                     <span>최소 인원: <strong id="min-people-display">0</strong>명</span>
                 </div>
                 <ul id="members-list" class="members-ul">
@@ -130,10 +132,6 @@
     // 상태 변수
     let selectedDuration = 1; // 기본 1시간
     let registeredMembers = []; // 등록된 멤버 목록
-    registeredMembers.push({
-        studentId: 202212345,
-        studentName: "defaultName"
-    });
 
     // 예약 시간 선택
     function selectDuration(duration) {
@@ -156,31 +154,48 @@
     selectDuration(1);
     
     // 멤버 등록
-    function registerMember() {
+    async function registerMember() {
         const studentId = document.getElementById('student-id').value.trim();
         const studentName = document.getElementById('student-name').value.trim();
         
-        if (!studentId || !studentName) {
-            alert('학번과 이름을 모두 입력해주세요.');
+        if (!studentId) {
+            alert('학번을 입력해주세요.');
             return;
         }
         
-        // 프론트엔드 시뮬레이션 (서버 호출 없음)
-        // 학번이 8자리 이상이고 이름이 있으면 등록 가능
-        setTimeout(() => {
-            const exists = studentId.length >= 8 && studentName.length > 0;
+        // 이미 등록된 멤버인지 확인
+        if (registeredMembers.some(m => m.studentId === studentId)) {
+            alert('이미 등록된 사용자입니다.');
+            return;
+        }
+        
+        try {
+            // DB에서 사용자 검색 (학번으로)
+            const response = await fetch(`/api/auth/users/search?loginId=${encodeURIComponent(studentId)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             
-            if (exists) {
-                // 이미 등록된 멤버인지 확인
-                if (registeredMembers.some(m => m.studentId === studentId)) {
-                    alert('이미 등록된 사용자입니다.');
-                    return;
+            const data = await response.json();
+            
+            if (response.ok) {
+                // DB에 존재하는 학생인 경우
+                // 이름은 DB에서 가져온 이름 사용
+                const dbName = data.name;
+                
+                // 입력한 이름이 있으면 검증 (선택사항)
+                if (studentName && studentName.trim() !== '' && studentName !== dbName) {
+                    if (!confirm(`입력한 이름("${studentName}")과 등록된 이름("${dbName}")이 다릅니다.\n등록된 이름("${dbName}")으로 등록하시겠습니까?`)) {
+                        return;
+                    }
                 }
                 
                 // 멤버 추가
                 registeredMembers.push({
                     studentId: studentId,
-                    studentName: studentName
+                    studentName: dbName
                 });
                 
                 // 목록 업데이트
@@ -190,11 +205,15 @@
                 document.getElementById('student-id').value = '';
                 document.getElementById('student-name').value = '';
                 
-                alert(`${studentName}님이 등록되었습니다.`);
+                alert(`${dbName}님이 등록되었습니다.`);
             } else {
-                alert('학번은 8자리 이상이어야 합니다.');
+                // DB에 존재하지 않는 경우
+                alert(data.error || '해당 학번의 사용자를 찾을 수 없습니다. 먼저 회원가입을 해주세요.');
             }
-        }, 300);
+        } catch (error) {
+            console.error('사용자 검색 오류:', error);
+            alert('사용자 검색 중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
     }
     
     // 멤버 목록 업데이트
@@ -202,15 +221,22 @@
         const membersList = document.getElementById('members-list');
         membersList.innerHTML = '';
         
-        registeredMembers.forEach((member, index) => {
+        if (registeredMembers.length === 0) {
             const li = document.createElement('li');
             li.className = 'member-item';
-            li.innerHTML = `
-                <span>${member.studentName} (${member.studentId})</span>
-                <button class="remove-btn" onclick="removeMember(${index})">삭제</button>
-            `;
+            li.innerHTML = '<span style="color: #999;">등록된 참여 인원이 없습니다.</span>';
             membersList.appendChild(li);
-        });
+        } else {
+            registeredMembers.forEach((member, index) => {
+                const li = document.createElement('li');
+                li.className = 'member-item';
+                li.innerHTML = `
+                    <span>${member.studentName} (${member.studentId})</span>
+                    <button class="remove-btn" onclick="removeMember(${index})">삭제</button>
+                `;
+                membersList.appendChild(li);
+            });
+        }
         
         document.getElementById('members-count').textContent = registeredMembers.length;
         updateReserveButton();
@@ -276,7 +302,7 @@
         
         // 예약 완료 후 마이페이지로 이동
         setTimeout(() => {
-            window.location.href = 'mypage.html';
+            window.location.href = '/';
         }, 1000);
     }
     
@@ -290,9 +316,71 @@
     // 예약 취소
     function cancelReservation() {
         if (confirm('예약을 취소하시겠습니까?')) {
-            window.location.href = 'reserve.html';
+            window.location.href = '/reserve';
         }
     }
+    
+    // 로그인 상태 확인 및 UI 업데이트
+    function checkLoginStatus() {
+        const token = localStorage.getItem('token');
+        const loginLink = document.getElementById('login-link');
+        const mypageLink = document.getElementById('mypage-link');
+        const logoutLink = document.getElementById('logout-link');
+        
+        if (token) {
+            // 로그인된 경우
+            loginLink.style.display = 'none';
+            mypageLink.style.display = 'inline';
+            logoutLink.style.display = 'inline';
+        } else {
+            // 로그인되지 않은 경우
+            loginLink.style.display = 'inline';
+            mypageLink.style.display = 'none';
+            logoutLink.style.display = 'none';
+        }
+    }
+    
+    // 로그아웃
+    function logout() {
+        if (confirm('로그아웃 하시겠습니까?')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('loginId');
+            localStorage.removeItem('role');
+            window.location.href = '/login';
+        }
+    }
+    
+    // 대표 예약자 정보 업데이트
+    async function updateMainBookingUser() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const userInfo = await response.json();
+                    // 사용자 이름 가져오기 (추가 API 호출 필요할 수 있음)
+                    // 현재는 loginId만 표시
+                    document.getElementById('main-booking-user').textContent = userInfo.loginId || '로그인 사용자';
+                }
+            } catch (error) {
+                console.error('대표 예약자 정보 가져오기 실패:', error);
+            }
+        } else {
+            document.getElementById('main-booking-user').textContent = '로그인 필요';
+        }
+    }
+    
+    // 페이지 로드 시 로그인 상태 확인 및 대표 예약자 정보 업데이트
+    document.addEventListener('DOMContentLoaded', function() {
+        checkLoginStatus();
+        updateMainBookingUser();
+        updateMembersList();
+    });
 </script>
 </body>
 </html>

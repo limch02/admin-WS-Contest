@@ -32,7 +32,8 @@ CREATE TABLE Classrooms (
     capacity INT NOT NULL,
     has_whiteboard BOOLEAN DEFAULT FALSE,
     has_projector BOOLEAN DEFAULT FALSE,
-    reserve_count INT DEFAULT 0
+    reserve_count INT DEFAULT 0,
+    available_date DATE NOT NULL
 );
 
 -- ==========================================

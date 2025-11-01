@@ -30,6 +30,18 @@ public class UserController {
         return "reserve";
     }
     
+    // 강의실 및 시간 선택 페이지
+    @GetMapping({"/room-time", "/room-time.html"})
+    public String roomTime() {
+        return "room-time";
+    }
+    
+    // 예약 상세 페이지
+    @GetMapping({"/reservation-detail", "/reservation-detail.html"})
+    public String reservationDetail() {
+        return "reservation-detail";
+    }
+    
     // 관리자 페이지
     @GetMapping("/admin")
     public String admin() {

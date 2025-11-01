@@ -73,4 +73,16 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
+
+    // 학번으로 사용자 검색 (예약 참여자 등록용)
+    @GetMapping("/users/search")
+    public ResponseEntity<?> searchUser(@RequestParam String loginId) {
+        try {
+            return authService.findUserByLoginId(loginId);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
 }

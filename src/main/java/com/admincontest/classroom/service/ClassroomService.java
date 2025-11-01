@@ -42,7 +42,8 @@ public class ClassroomService {
                 updateDTO.getLocation(),
                 updateDTO.getCapacity(),
                 updateDTO.isHasWhiteboard(),
-                updateDTO.isHasProjector()
+                updateDTO.isHasProjector(),
+                updateDTO.getAvailableDate()
         );
     }
 

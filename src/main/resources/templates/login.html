@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 | CNU Room</title>
-    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header>
     <div><b>📚 CNU Room</b></div>
     <nav>
-        <a href="index.html">홈</a>
-        <a href="register.html">회원가입</a>
+        <a href="/">홈</a>
+        <a href="/register">회원가입</a>
     </nav>
 </header>
 
@@ -54,7 +54,7 @@
             </form>
             
             <div class="login-footer">
-                <p>아직 계정이 없으신가요? <a href="register.html">회원가입</a></p>
+                <p>아직 계정이 없으신가요? <a href="/register">회원가입</a></p>
             </div>
         </div>
     </div>
@@ -119,29 +119,53 @@
         loginLoading.style.display = 'inline';
         hideError();
         
-        // 프론트엔드 시뮬레이션 (서버 호출 없음)
-        setTimeout(() => {
-            // 간단한 검증 (실제로는 서버에서 처리)
-            if (username && password) {
-                // 로그인 성공 시뮬레이션
+        try {
+            // 실제 API 호출
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    loginId: username,
+                    password: password
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // 로그인 성공
+                // JWT 토큰 저장
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('loginId', data.loginId);
+                localStorage.setItem('role', data.role);
+                
+                // 로그인 상태 유지 옵션 처리
+                if (rememberMe) {
+                    localStorage.setItem('savedUsername', username);
+                } else {
+                    localStorage.removeItem('savedUsername');
+                }
+                
                 alert('로그인되었습니다.');
                 
-                // 사용자 정보 저장
-                localStorage.setItem('user', JSON.stringify({
-                    username: username,
-                    role: username.includes('admin') ? '관리자' : '학생'
-                }));
-                
-                // 마이페이지로 이동
-                window.location.href = 'mypage.html';
+                // 홈으로 이동
+                window.location.href = '/';
             } else {
                 // 로그인 실패
-                showError('아이디 또는 비밀번호를 입력해주세요.');
+                showError(data.error || '로그인에 실패했습니다. ID와 비밀번호를 확인해주세요.');
                 loginBtn.disabled = false;
                 loginBtnText.style.display = 'inline';
                 loginLoading.style.display = 'none';
             }
-        }, 800); // 로딩 효과를 위한 지연
+        } catch (error) {
+            console.error('로그인 오류:', error);
+            showError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+            loginBtn.disabled = false;
+            loginBtnText.style.display = 'inline';
+            loginLoading.style.display = 'none';
+        }
     });
     
     // 입력 필드에서 Enter 키 처리

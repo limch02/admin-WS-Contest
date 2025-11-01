@@ -63,6 +63,8 @@ public class SecurityConfig {
                                 "/style.css",
                                 "/register",
                                 "/login",
+                                "/reserve",
+                                "/reserve.html",
                                 "/h2-console/**"
                         ).permitAll()
 

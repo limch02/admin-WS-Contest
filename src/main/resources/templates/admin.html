@@ -122,6 +122,11 @@
             </div>
             
             <div class="form-group">
+                <label for="room-available-date">사용 가능 날짜 *</label>
+                <input type="date" id="room-available-date" name="room-available-date" required>
+            </div>
+            
+            <div class="form-group">
                 <label>비품</label>
                 <div class="equipment-checkboxes">
                     <label class="checkbox-label">
@@ -523,6 +528,13 @@
         document.getElementById('room-location').value = room.location;
         document.getElementById('room-capacity').value = room.capacity;
         
+        // 날짜 필드 설정
+        if (room.availableDate) {
+            // LocalDate 형식(YYYY-MM-DD)을 input type="date" 형식으로 변환
+            const dateStr = room.availableDate.split('T')[0]; // ISO 형식에서 날짜만 추출
+            document.getElementById('room-available-date').value = dateStr;
+        }
+        
         // 비품 체크박스 초기화
         document.getElementById('equipment-projector').checked = room.hasProjector || false;
         document.getElementById('equipment-whiteboard').checked = room.hasWhiteboard || false;
@@ -545,13 +557,14 @@
         const name = document.getElementById('room-name').value.trim();
         const location = document.getElementById('room-location').value.trim();
         const capacity = parseInt(document.getElementById('room-capacity').value);
+        const availableDate = document.getElementById('room-available-date').value;
         const hasProjector = document.getElementById('equipment-projector').checked;
         const hasWhiteboard = document.getElementById('equipment-whiteboard').checked;
         
         const errorDiv = document.getElementById('form-error');
         
         // 검증
-        if (!name || !location || !capacity || capacity < 1) {
+        if (!name || !location || !capacity || capacity < 1 || !availableDate) {
             errorDiv.textContent = '모든 필드를 올바르게 입력해주세요.';
             errorDiv.style.display = 'block';
             return;
@@ -564,6 +577,7 @@
                 name: name,
                 location: location,
                 capacity: capacity,
+                availableDate: availableDate,
                 hasProjector: hasProjector,
                 hasWhiteboard: hasWhiteboard
             };

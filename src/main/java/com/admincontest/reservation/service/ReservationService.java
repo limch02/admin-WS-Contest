@@ -46,9 +46,20 @@ public class ReservationService {
     }
 
     public List<Integer> getAvailableTimes(Long roomId, LocalDate date) {
-        // TODO: 새 엔티티 구조에 맞게 구현 필요
-        // 현재는 임시로 모든 시간 반환
+        // 특정 강의실과 날짜의 예약 조회
+        List<Reservation> reservations = reservationRepository.findByClassroomIdAndDate(roomId, date);
+        
+        // 예약된 시간대 추출
+        List<Integer> reservedHours = reservations.stream()
+                .flatMap(r -> IntStream.range(
+                        r.getReservationStartedAt().getHour(),
+                        r.getReservationEndedAt().getHour()
+                ).boxed())
+                .collect(Collectors.toList());
+        
+        // 6시부터 22시까지 중 예약되지 않은 시간대 반환
         return IntStream.rangeClosed(6, 22)
+                .filter(hour -> !reservedHours.contains(hour))
                 .boxed()
                 .collect(Collectors.toList());
     }

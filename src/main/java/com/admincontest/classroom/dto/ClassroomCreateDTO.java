@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,8 +18,9 @@ public class ClassroomCreateDTO {
 	private int capacity;
 	private boolean hasWhiteboard;
 	private boolean hasProjector;
+	private LocalDate availableDate;
 
 	public Classroom toEntity() {
-		return Classroom.of(name, location, capacity, hasWhiteboard, hasProjector);
+		return Classroom.of(name, location, capacity, hasWhiteboard, hasProjector, availableDate);
 	}
 }

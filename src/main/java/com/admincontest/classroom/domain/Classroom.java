@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -36,30 +38,36 @@ public class Classroom {
 	@Column(name = "has_projector")
 	private boolean hasProjector;
 
+	@Column(name = "available_date", nullable = false)
+	private LocalDate availableDate;
+
 	@Builder
-	private Classroom(String name, String location, int capacity, boolean hasWhiteboard, boolean hasProjector) {
+	private Classroom(String name, String location, int capacity, boolean hasWhiteboard, boolean hasProjector, LocalDate availableDate) {
 		this.name = name;
 		this.location = location;
 		this.capacity = capacity;
 		this.hasWhiteboard = hasWhiteboard;
 		this.hasProjector = hasProjector;
+		this.availableDate = availableDate;
 	}
 
-	public static Classroom of(String name, String location, int capacity, boolean hasWhiteboard, boolean hasProjector) {
+	public static Classroom of(String name, String location, int capacity, boolean hasWhiteboard, boolean hasProjector, LocalDate availableDate) {
 		return Classroom.builder()
 				.name(name)
 				.location(location)
 				.capacity(capacity)
 				.hasWhiteboard(hasWhiteboard)
 				.hasProjector(hasProjector)
+				.availableDate(availableDate)
 				.build();
 	}
 
-	public void update(String name, String location, int capacity, boolean hasWhiteboard, boolean hasProjector) {
+	public void update(String name, String location, int capacity, boolean hasWhiteboard, boolean hasProjector, LocalDate availableDate) {
 		this.name = name;
 		this.location = location;
 		this.capacity = capacity;
 		this.hasWhiteboard = hasWhiteboard;
 		this.hasProjector = hasProjector;
+		this.availableDate = availableDate;
 	}
 }

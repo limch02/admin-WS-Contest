@@ -2,8 +2,6 @@ package com.admincontest.reservation.dto;
 
 import lombok.Getter;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @Getter

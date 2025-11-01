@@ -36,10 +36,8 @@ public class AuthService {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
-        // 역할 검증 및 기본값 설정
-        UserStatus role = (request.getRole() != null && request.getRole().equals("ADMIN"))
-                ? UserStatus.ADMIN
-                : UserStatus.STUDENT;
+        // 회원가입은 항상 학생(STUDENT)만 가능
+        // 관리자 계정은 애플리케이션 시작 시 자동 생성됨 (adminid/adminpw)
 
         // 사용자 생성
         User user = User.builder()
@@ -47,7 +45,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword())) // 비밀번호 암호화
                 .email(request.getEmail())
                 .name(request.getName())
-                .role(role)
+                .role(UserStatus.STUDENT) // 항상 학생으로 설정
                 .reservationNum(0)
                 .build();
 

@@ -1,19 +1,19 @@
 package com.admincontest.reservation.domain;
 
 import com.admincontest.classroom.domain.Classroom;
+import com.admincontest.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "reservations")
+@Table(name = "Reservation")
 public class Reservation {
 
     @Id
@@ -21,43 +21,46 @@ public class Reservation {
     @Column(name = "reservation_id")
     private Long id;
 
+    @Column(name = "reservation_started_at", nullable = false)
+    private LocalDateTime reservationStartedAt;
+
+    @Column(name = "reservation_ended_at", nullable = false)
+    private LocalDateTime reservationEndedAt;
+
+    @Column(name = "reservation_num")
+    private Integer reservationNum;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "classroom_id", nullable = false)
-    private Classroom classroom;
+    @JoinColumn(name = "room_id", nullable = false)
+    private Classroom room;
 
-    @Column(name = "student_id", nullable = false)
-    private String studentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "student_name", nullable = false)
-    private String studentName;
-
-    @Column(name = "reservation_date", nullable = false)
-    private LocalDate date;
-
-    @Column(name = "start_time", nullable = false)
-    private LocalTime startTime;
-
-    @Column(name = "end_time", nullable = false)
-    private LocalTime endTime;
+    @Column(name = "status", length = 20)
+    private String status;
 
     @Builder
-    private Reservation(Classroom classroom, String studentId, String studentName, LocalDate date, LocalTime startTime, LocalTime endTime) {
-        this.classroom = classroom;
-        this.studentId = studentId;
-        this.studentName = studentName;
-        this.date = date;
-        this.startTime = startTime;
-        this.endTime = endTime;
+    private Reservation(LocalDateTime reservationStartedAt, LocalDateTime reservationEndedAt, 
+                       Integer reservationNum, Classroom room, User user, String status) {
+        this.reservationStartedAt = reservationStartedAt;
+        this.reservationEndedAt = reservationEndedAt;
+        this.reservationNum = reservationNum;
+        this.room = room;
+        this.user = user;
+        this.status = status != null ? status : "ACTIVE";
     }
 
-    public static Reservation of(Classroom classroom, String studentId, String studentName, LocalDate date, LocalTime startTime, LocalTime endTime) {
+    public static Reservation of(LocalDateTime reservationStartedAt, LocalDateTime reservationEndedAt, 
+                                 Classroom room, User user) {
         return Reservation.builder()
-                .classroom(classroom)
-                .studentId(studentId)
-                .studentName(studentName)
-                .date(date)
-                .startTime(startTime)
-                .endTime(endTime)
+                .reservationStartedAt(reservationStartedAt)
+                .reservationEndedAt(reservationEndedAt)
+                .reservationNum(0)
+                .room(room)
+                .user(user)
+                .status("ACTIVE")
                 .build();
     }
 }

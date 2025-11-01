@@ -29,4 +29,10 @@ public class UserController {
     public String reserve() {
         return "reserve";
     }
+    
+    // 관리자 페이지
+    @GetMapping("/admin")
+    public String admin() {
+        return "admin";
+    }
 }

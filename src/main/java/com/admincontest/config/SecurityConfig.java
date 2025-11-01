@@ -65,11 +65,12 @@ public class SecurityConfig {
                                 "/login",
                                 "/reserve",
                                 "/reserve.html",
+                                "/admin",
                                 "/h2-console/**"
                         ).permitAll()
 
-                        // ADMIN만 접근 가능
-                        .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+                        // ADMIN만 접근 가능 (API만 보호, 페이지는 프론트엔드에서 토큰 확인)
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()

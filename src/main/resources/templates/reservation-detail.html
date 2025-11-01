@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 상세 정보 | CNU Room</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+<header>
+    <div><b>📚 CNU Room</b></div>
+    <nav>
+        <a href="index.html">홈</a>
+        <a href="reserve.html">예약하기</a>
+        <a href="mypage.html">마이페이지</a>
+    </nav>
+</header>
+
+<main class="reservation-detail-main">
+    <div class="detail-container">
+        <h2>예약 상세 정보</h2>
+        
+        <!-- 선택된 정보 표시 -->
+        <div class="selected-info">
+            <div class="info-item">
+                <label>날짜:</label>
+                <span id="display-date"></span>
+            </div>
+            <div class="info-item">
+                <label>강의실:</label>
+                <span id="display-room"></span>
+            </div>
+            <div class="info-item">
+                <label>시작 시간:</label>
+                <span id="display-time"></span>
+            </div>
+        </div>
+        
+        <!-- 예약 시간 선택 -->
+        <div class="duration-section">
+            <h3>예약 시간</h3>
+            <div class="duration-buttons">
+                <button class="duration-btn" data-duration="1" onclick="selectDuration(1)">1시간</button>
+                <button class="duration-btn" data-duration="2" onclick="selectDuration(2)">2시간</button>
+            </div>
+            <p class="duration-display" id="duration-display">시작 시간: <span id="start-time-display"></span> ~ 종료 시간: <span id="end-time-display"></span></p>
+        </div>
+        
+        <!-- 모임 정보 -->
+        <div class="meeting-info-section">
+            <h3>모임 정보</h3>
+            <div class="form-group">
+                <label for="meeting-name">모임명</label>
+                <input type="text" id="meeting-name" placeholder="모임명을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label for="meeting-note">기타(전달사항)</label>
+                <textarea id="meeting-note" placeholder="전달사항을 입력하세요" rows="3"></textarea>
+            </div>
+        </div>
+        
+        <!-- 그룹 사용자 추가 -->
+        <div class="group-members-section">
+            <h3>참여 인원</h3>
+            <p class="instruction">대표 예약자 외에 참석 예정인 이용자를 개별 등록하여 주십시오. (최소 인원 이상 등록해야 예약 버튼이 활성화됩니다.)</p>
+            
+            <div class="add-member-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="student-id">이용자 번호(학번)</label>
+                        <input type="text" id="student-id" placeholder="학번을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="student-name">이용자 이름</label>
+                        <input type="text" id="student-name" placeholder="이름을 입력하세요">
+                    </div>
+                </div>
+                <button class="register-btn" onclick="registerMember()">이용자 등록</button>
+            </div>
+            
+            <!-- 등록된 멤버 목록 -->
+            <div class="members-list">
+                <h4>등록된 참여 인원</h4>
+                <div class="members-count">
+                    <span>대표 예약자: <strong id="main-booking-user">홍길동</strong></span>
+                    <span>참여 인원: <strong id="members-count">0</strong>명</span>
+                    <span>최소 인원: <strong id="min-people-display">0</strong>명</span>
+                </div>
+                <ul id="members-list" class="members-ul">
+                    <!-- 등록된 멤버들이 동적으로 추가됩니다 -->
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 설명 섹션 -->
+        <div class="info-box">
+            <p><strong>Justice: What's the Right Thing to Do?</strong></p>
+            <p>최대한 편리하게 이용하고, 또한 강력하게 제재합니다.</p>
+        </div>
+        
+        <!-- 예약 버튼 -->
+        <div class="reservation-actions">
+            <button class="cancel-btn" onclick="cancelReservation()">취소</button>
+            <button class="reserve-btn" id="reserve-btn" onclick="completeReservation()" disabled>예약</button>
+        </div>
+    </div>
+</main>
+
+<footer>© 2025 CNU Room Reservation System</footer>
+
+<script>
+    // URL 파라미터에서 정보 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedDate = urlParams.get('date') || '';
+    const roomId = parseInt(urlParams.get('roomId')) || 0;
+    const selectedHour = parseInt(urlParams.get('hour')) || 9;
+    const roomName = decodeURIComponent(urlParams.get('roomName') || '');
+    const capacity = parseInt(urlParams.get('capacity')) || 10;
+    const minPeople = parseInt(urlParams.get('minPeople')) || 5;
+    
+    // 선택된 정보 표시
+    if (selectedDate) {
+        const dateObj = new Date(selectedDate + 'T00:00:00');
+        const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+        document.getElementById('display-date').textContent = formattedDate;
+    }
+    document.getElementById('display-room').textContent = roomName;
+    document.getElementById('display-time').textContent = `${String(selectedHour).padStart(2, '0')}:00`;
+    document.getElementById('start-time-display').textContent = `${String(selectedHour).padStart(2, '0')}:00`;
+    document.getElementById('min-people-display').textContent = minPeople;
+    
+    // 상태 변수
+    let selectedDuration = 1; // 기본 1시간
+    let registeredMembers = []; // 등록된 멤버 목록
+    
+    // 예약 시간 선택
+    function selectDuration(duration) {
+        selectedDuration = duration;
+        const buttons = document.querySelectorAll('.duration-btn');
+        buttons.forEach(btn => {
+            btn.classList.remove('active');
+            if (parseInt(btn.dataset.duration) === duration) {
+                btn.classList.add('active');
+            }
+        });
+        
+        const endHour = selectedHour + duration;
+        const endTimeDisplay = endHour <= 22 ? `${String(endHour).padStart(2, '0')}:00` : '22:00 (종료)';
+        document.getElementById('end-time-display').textContent = endTimeDisplay;
+        updateReserveButton();
+    }
+    
+    // 기본으로 1시간 선택
+    selectDuration(1);
+    
+    // 멤버 등록
+    function registerMember() {
+        const studentId = document.getElementById('student-id').value.trim();
+        const studentName = document.getElementById('student-name').value.trim();
+        
+        if (!studentId || !studentName) {
+            alert('학번과 이름을 모두 입력해주세요.');
+            return;
+        }
+        
+        // 데이터베이스 확인 (프론트엔드에서는 시뮬레이션)
+        // 실제로는 서버 API를 호출하여 데이터베이스에 존재하는지 확인해야 합니다
+        checkStudentInDatabase(studentId, studentName).then(exists => {
+            if (exists) {
+                // 이미 등록된 멤버인지 확인
+                if (registeredMembers.some(m => m.studentId === studentId)) {
+                    alert('이미 등록된 사용자입니다.');
+                    return;
+                }
+                
+                // 멤버 추가
+                registeredMembers.push({
+                    studentId: studentId,
+                    studentName: studentName
+                });
+                
+                // 목록 업데이트
+                updateMembersList();
+                
+                // 입력 필드 초기화
+                document.getElementById('student-id').value = '';
+                document.getElementById('student-name').value = '';
+                
+                alert(`${studentName}님이 등록되었습니다.`);
+            } else {
+                alert('데이터베이스에 존재하지 않는 사용자입니다. 학번과 이름을 확인해주세요.');
+            }
+        });
+    }
+    
+    // 데이터베이스 확인 (시뮬레이션)
+    // 실제로는 서버 API 호출로 교체해야 합니다
+    function checkStudentInDatabase(studentId, studentName) {
+        return new Promise((resolve) => {
+            // 실제 구현 시 서버 API 호출
+            // fetch(`/api/students/check`, { method: 'POST', body: JSON.stringify({studentId, studentName}) })
+            //     .then(res => res.json())
+            //     .then(data => resolve(data.exists));
+            
+            // 임시 시뮬레이션: 학번이 8자리 이상이면 존재한다고 가정
+            setTimeout(() => {
+                resolve(studentId.length >= 8 && studentName.length > 0);
+            }, 300);
+        });
+    }
+    
+    // 멤버 목록 업데이트
+    function updateMembersList() {
+        const membersList = document.getElementById('members-list');
+        membersList.innerHTML = '';
+        
+        registeredMembers.forEach((member, index) => {
+            const li = document.createElement('li');
+            li.className = 'member-item';
+            li.innerHTML = `
+                <span>${member.studentName} (${member.studentId})</span>
+                <button class="remove-btn" onclick="removeMember(${index})">삭제</button>
+            `;
+            membersList.appendChild(li);
+        });
+        
+        document.getElementById('members-count').textContent = registeredMembers.length;
+        updateReserveButton();
+    }
+    
+    // 멤버 제거
+    function removeMember(index) {
+        if (confirm('정말 삭제하시겠습니까?')) {
+            registeredMembers.splice(index, 1);
+            updateMembersList();
+        }
+    }
+    
+    // 예약 버튼 업데이트
+    function updateReserveButton() {
+        const totalPeople = registeredMembers.length + 1; // 대표 예약자 포함
+        const reserveBtn = document.getElementById('reserve-btn');
+        
+        if (totalPeople >= minPeople) {
+            reserveBtn.disabled = false;
+            reserveBtn.classList.add('enabled');
+        } else {
+            reserveBtn.disabled = true;
+            reserveBtn.classList.remove('enabled');
+        }
+    }
+    
+    // 예약 완료
+    function completeReservation() {
+        const meetingName = document.getElementById('meeting-name').value.trim();
+        const meetingNote = document.getElementById('meeting-note').value.trim();
+        const totalPeople = registeredMembers.length + 1;
+        
+        if (!meetingName) {
+            alert('모임명을 입력해주세요.');
+            return;
+        }
+        
+        if (totalPeople < minPeople) {
+            alert(`최소 인원(${minPeople}명) 이상 등록해야 예약할 수 있습니다.`);
+            return;
+        }
+        
+        // 예약 정보 구성
+        const reservationData = {
+            date: selectedDate,
+            roomId: roomId,
+            roomName: roomName,
+            startHour: selectedHour,
+            duration: selectedDuration,
+            endHour: selectedHour + selectedDuration,
+            meetingName: meetingName,
+            meetingNote: meetingNote,
+            mainBooker: '홍길동', // 실제로는 로그인한 사용자 정보
+            members: registeredMembers,
+            totalPeople: totalPeople
+        };
+        
+        // 실제로는 서버 API 호출
+        // fetch('/api/reservations', { method: 'POST', body: JSON.stringify(reservationData) })
+        //     .then(res => res.json())
+        //     .then(data => {
+        //         alert('예약이 완료되었습니다! 모든 참여 인원에게 알림이 발송되었습니다.');
+        //         window.location.href = 'mypage.html';
+        //     });
+        
+        // 프론트엔드 시뮬레이션
+        console.log('예약 정보:', reservationData);
+        alert('예약이 완료되었습니다!\n\n등록된 모든 인원에게 알림이 발송되었습니다.\n\n날짜: ' + selectedDate + '\n강의실: ' + roomName + '\n시간: ' + String(selectedHour).padStart(2, '0') + ':00 ~ ' + String(selectedHour + selectedDuration).padStart(2, '0') + ':00\n참여 인원: ' + totalPeople + '명');
+        
+        // 예약 완료 후 마이페이지로 이동 (또는 예약 확인 페이지)
+        setTimeout(() => {
+            window.location.href = 'mypage.html';
+        }, 1000);
+    }
+    
+    // 예약 취소
+    function cancelReservation() {
+        if (confirm('예약을 취소하시겠습니까?')) {
+            window.location.href = 'reserve.html';
+        }
+    }
+</script>
+</body>
+</html>

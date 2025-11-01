@@ -75,8 +75,10 @@ public class SecurityConfig {
                                 "/admin",
                                 "/search",
                                 "/search.html",
+                                "/mypage",
+                                "/mypage.html",
                                 "/h2-console/**"
-                        ).permitAll()
+                                ).permitAll()
                         
                         // GET /api/classrooms는 공개 접근 (읽기 전용)
                         .requestMatchers("GET", "/api/classrooms").permitAll()

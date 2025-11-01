@@ -139,5 +139,104 @@ public class ReservationService {
                 })
                 .collect(Collectors.toList());
     }
+    
+    /**
+     * 특정 사용자의 예약 내역 조회
+     */
+    public List<java.util.Map<String, Object>> getUserReservations(Long userId) {
+        List<Reservation> reservations = reservationRepository.findAllByUserId(userId);
+        
+        return reservations.stream()
+                .map(r -> {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("reservationId", r.getId());
+                    map.put("roomId", r.getRoom().getId());
+                    map.put("roomName", r.getRoom().getName());
+                    map.put("location", r.getRoom().getLocation());
+                    map.put("date", r.getReservationStartedAt().toLocalDate().toString());
+                    map.put("startDateTime", r.getReservationStartedAt().toString());
+                    map.put("endDateTime", r.getReservationEndedAt().toString());
+                    map.put("startHour", r.getReservationStartedAt().getHour());
+                    map.put("endHour", r.getReservationEndedAt().getHour());
+                    map.put("status", r.getStatus());
+                    map.put("canCancel", canCancelReservation(r));
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 강의실별 예약 타임라인 조회 (특정 날짜 범위)
+     */
+    public List<java.util.Map<String, Object>> getRoomTimeline(Long roomId, LocalDate startDate, LocalDate endDate) {
+        // 날짜 범위 내의 모든 예약 조회 (더 효율적인 쿼리 사용)
+        LocalDateTime dateStart = startDate.atStartOfDay();
+        LocalDateTime dateEnd = endDate.plusDays(1).atStartOfDay();
+        List<Reservation> allReservations = reservationRepository.findByClassroomIdAndDate(roomId, dateStart, dateEnd)
+                .stream()
+                .filter(r -> "ACTIVE".equals(r.getStatus()))
+                .sorted((a, b) -> a.getReservationStartedAt().compareTo(b.getReservationStartedAt()))
+                .collect(Collectors.toList());
+        
+        return allReservations.stream()
+                .map(r -> {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("reservationId", r.getId());
+                    map.put("date", r.getReservationStartedAt().toLocalDate().toString());
+                    map.put("startDateTime", r.getReservationStartedAt().toString());
+                    map.put("endDateTime", r.getReservationEndedAt().toString());
+                    map.put("startHour", r.getReservationStartedAt().getHour());
+                    map.put("endHour", r.getReservationEndedAt().getHour());
+                    map.put("userName", r.getUser().getName());
+                    map.put("userLoginId", r.getUser().getLoginId());
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 예약 취소
+     */
+    @Transactional
+    public void cancelReservation(Long reservationId, Long userId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+        
+        // 본인의 예약인지 확인
+        if (!reservation.getUser().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("본인의 예약만 취소할 수 있습니다.");
+        }
+        
+        // 이미 취소된 예약인지 확인
+        if ("CANCELLED".equals(reservation.getStatus())) {
+            throw new IllegalArgumentException("이미 취소된 예약입니다.");
+        }
+        
+        // 예약 시작 10분 전까지만 취소 가능
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reservationStart = reservation.getReservationStartedAt();
+        if (now.isAfter(reservationStart.minusMinutes(10))) {
+            throw new IllegalArgumentException("예약 시작 10분 전까지만 취소 가능합니다.");
+        }
+        
+        // 예약 상태를 CANCELLED로 변경
+        reservation.cancel();
+        reservationRepository.save(reservation);
+    }
+    
+    /**
+     * 예약 취소 가능 여부 확인
+     */
+    private boolean canCancelReservation(Reservation reservation) {
+        if (!"ACTIVE".equals(reservation.getStatus())) {
+            return false;
+        }
+        
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reservationStart = reservation.getReservationStartedAt();
+        
+        // 예약 시작 10분 전까지만 취소 가능
+        return now.isBefore(reservationStart.minusMinutes(10));
+    }
 }
 

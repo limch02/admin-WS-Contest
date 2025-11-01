@@ -53,4 +53,10 @@ public class UserController {
     public String search() {
         return "search";
     }
+    
+    // 마이페이지
+    @GetMapping("/mypage")
+    public String mypage() {
+        return "mypage";
+    }
 }
